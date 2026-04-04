@@ -11,6 +11,11 @@ patches-own [
   hiring-threshold          ;; minimum skill required to hire an agent
   coaching-rate             ;; amount of time spent training instead of working
   activity                  ;; activity chosen for current tick
+  revenue                   ;; revenue of company
+]
+
+globals [
+  
 ]
 
 ;; ---------------------------------------
@@ -19,17 +24,20 @@ patches-own [
 
 to setup
   clear-all
-  reset-ticks
+  set-default-shape turtles "person"
   
   setup-patches
   setup-turtles
+  
+  reset-ticks
 end
 
 to setup-patches
-  ask patches [
-    set headcount (random 391) + 10
-    set hiring-threshold random 50
-    set coaching-rate random 10
+  ask patches with [not ((pxcor = 0) and (pycor = 0))] [
+    set headcount (random (max-headcount - min-headcount + 1)) + min-headcount
+    set hiring-threshold random 10
+    set coaching-rate random coaching-rate-range
+    sprout headcount
   ]
   
   ;; handle the unemployed pool
@@ -41,10 +49,10 @@ to setup-patches
 end
 
 to setup-turtles
-  create-turtles 100 [
+  ask turtles [
     set age (random 41) + 20
     set skill-level age * (random 10)
-    set turnover-probability random 5
+    set turnover-probability 1
   ]
 end
 
@@ -57,13 +65,21 @@ to go
   turnover
   increase-age
   
-  ask patches [
+  ask patches with [not ((pxcor = 0) and (pycor = 0))] [
     fill-vacancies
     choose-activity
-  ]
-  ask turtles [
-    ;; apply the activity
     
+    ;; execute activity
+    ask turtles-here [
+      ifelse (activity = "train") [
+        set skill-level (skill-level + 10)
+        set turnover-probability (turnover-probability - 1)
+      ] [
+        set skill-level (skill-level + 1)
+        set turnover-probability (turnover-probability + 1)
+        set revenue (revenue + skill-level)
+      ]
+    ]
   ]
   
   ;; TBD: adapt strategy depending on environment and results
@@ -74,29 +90,73 @@ end
 
 to turnover
   ask turtles [
-    if (random 100) > turnover-probability [
-      
+    if (random 100) < turnover-probability [
+      set xcor 0
+      set ycor 0
+      set age 20
+      set skill-level age * (random 10)
+      set turnover-probability 1
     ]
   ]
 end
 
 to increase-age
   ask turtles [
-    set age age + 1
+    set age (age + 1)
+    if (age > 65) [
+      hatch 1 [ setxy 0 0 ]
+      die
+    ]
   ]
 end
 
+;; tries to fill vacancies, need to run in patch context
 to fill-vacancies
+  if (count turtles-here < headcount) [ 
+    ask turtles with [xcor = 0 and ycor =  0] [
+      if (skill-level > hiring-threshold)
+      [ move-to myself ]
+    ]
+  ]
   
 end
 
+;; choose the activity, needs to run in patch context
 to choose-activity
-  
-end]]></code>
+  ifelse ((random 100) < coaching-rate)
+    [ set activity "coach" ]
+    [ set activity "work" ]
+end
+]]></code>
   <widgets>
-    <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="0" height="554" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="554" tickCounterLabel="ticks" maxPycor="10" updateMode="1" maxPxcor="10" minPxcor="0"></view>
+    <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="0" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="9" updateMode="1" maxPxcor="9" minPxcor="0"></view>
     <button x="55" y="105" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="120" display="Run Simulation">go</button>
-    <button x="190" y="105" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="105" display="Step Simulation">go</button>
+    <button x="185" y="105" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="105" display="Step Simulation">go</button>
+    <monitor x="825" precision="17" y="10" height="60" fontSize="11" width="100" display="Worker Count">count turtles</monitor>
+    <monitor x="825" precision="17" y="75" height="60" fontSize="11" width="100" display="Unemployed">count turtles with [xcor = 0 and ycor = 0]</monitor>
+    <slider x="935" step="1" y="10" max="400" width="210" display="min-headcount" height="50" min="1" direction="Horizontal" default="29.0" variable="min-headcount"></slider>
+    <slider x="1155" step="1" y="10" max="400" width="250" display="max-headcount" height="50" min="min-headcount" direction="Horizontal" default="135.0" variable="max-headcount"></slider>
+    <slider x="935" step="1" y="70" max="10" width="250" display="coaching-rate-range" height="50" min="0" direction="Horizontal" default="6.0" variable="coaching-rate-range"></slider>
+    <plot x="825" autoPlotX="true" yMax="100.0" autoPlotY="true" yAxis="Companies" y="145" xMin="0.0" height="220" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Revenue" display="Revenue Distribution">
+      <setup>set-plot-y-range 0 count patches
+</setup>
+      <update>set-plot-x-range 0 (max [revenue] of patches) + 1
+set-histogram-num-bars 20</update>
+      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
+        <setup></setup>
+        <update>histogram [revenue] of patches </update>
+      </pen>
+    </plot>
+    <plot x="825" autoPlotX="true" yMax="100.0" autoPlotY="true" yAxis="Workers" y="380" xMin="0.0" height="265" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Skill Level" display="Skill Level Distribution">
+      <setup>set-plot-y-range 0 count turtles
+</setup>
+      <update>set-plot-x-range 0 (max [skill-level] of turtles) + 1
+set-histogram-num-bars 20</update>
+      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
+        <setup></setup>
+        <update>histogram [skill-level] of turtles</update>
+      </pen>
+    </plot>
     <button x="55" y="45" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
   </widgets>
   <info>## WHAT IS IT?

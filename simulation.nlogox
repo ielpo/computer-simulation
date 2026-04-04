@@ -100,12 +100,50 @@ end]]></code>
     <button x="55" y="45" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
   </widgets>
   <info>## WHAT IS IT?
-
 (a general understanding of what the model is trying to show or explain)
+
+This model explores the effect of software developer training on company performance within an ecosystem of competing software companies.
+
+Companies face a strategic trade-off:
+
+- **Invest in coaching** to improve developers skills, leading to higher efficiency over time. However, developers are less productive during coaching and once they become more skilled, they may leave for another company.
+
+- **Hire already skilled developers** and avoid investing in coaching. This carries the risk that developers may leave due to a lack of growth and if all companies follow this strategy, it raises the question of who will train developers in the first place.
+
+The model focuses specifically on the coaching dynamic. Aspects such as developer specialization, management decisions, company-specific knowledge, and software quality are intentionally left out of scope.
 
 ## HOW IT WORKS
 
 (what rules the agents use to create the overall behavior of the model)
+
+For each simulation step (tick), developers and companies act in the following sequence:
+
+### Developer actions
+- Decide whether to leave the company (turnover-probability)
+- Increase age
+- Increase skill level (skill) and update turnover probability (agent-turnover) based on activity (work or coaching)
+
+### Company actions
+- Evaluate current headcount and hire developers (hiring-threshold)
+- Choose activity (coaching-rate)
+    -  **Coaching day**: Developers increase their skill level and the turnover probability decreases (satisfied, growing workers stay).
+    -  **Working day**: Developers focus on regular work and their turnover probability increases (stagnating workers become more likely to leave). Company output increases.
+
+### Initialisation Agents
+
+**Age**: Weighted probability based on Swiss demographics, between 20 and 60 years. 
+
+**Skill**: Proportional to age with a random factor (older developers start more productive, reflecting years of experience)
+
+**Turnover probability**: Starts at 1% for all developers. It decreases with coaching and increases with stagnation (working without growth).
+
+### Initialisation Companies
+
+**Headcount**: Random value between 10 and 400 
+
+**Hiring Threshold**: Random value, range TBD 
+
+**Coaching Rate**: Random value between 0% and 10% 
 
 ## HOW TO USE IT
 

@@ -88,6 +88,7 @@ to go
   tick
 end
 
+;; why do we reset the skill-level when they switch the company?
 to turnover
   ask turtles [
     if (random 100) < turnover-probability [

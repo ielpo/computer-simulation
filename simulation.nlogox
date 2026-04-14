@@ -13,10 +13,15 @@ patches-own [
   coaching-rate             ;; amount of time spent training instead of working
   activity                  ;; activity chosen for current tick
   revenue                   ;; revenue of company for current tick
+  strategy                  ;; "talent-factory", "cherry-picker", or "goldilocks"
+  cumulative-revenue        ;; rolling revenue for strategy evaluation
+  ticks-since-review        ;; ticks since last strategy review
 ]
 
 globals [
   ticks-per-year
+  market-mean-skill         ;; average skill across all employed workers
+  market-mean-revenue       ;; average revenue across all companies
 ]
 
 ;; ---------------------------------------
@@ -25,13 +30,14 @@ globals [
 to setup
   clear-all
   set-default-shape turtles "person"
-  
+
   set ticks-per-year 100
-  
+
   setup-patches
   setup-turtles
+  update-market-stats
   color-patches
-  
+
   reset-ticks
 end
 
@@ -41,21 +47,28 @@ to setup-patches
     set headcount (random (max-headcount - min-headcount + 1)) + min-headcount
     set hiring-threshold random max-hiring-threshold
     set coaching-rate random max-coaching-rate
+    ;; set strategy one-of ["talent-factory" "cherry-picker" "goldilocks"]
+    set strategy item (count patches with [strategy != "none" and strategy != 0] mod 3) ["talent-factory" "cherry-picker" "goldilocks"]
+    set cumulative-revenue 0
+    set ticks-since-review 0
     sprout headcount
   ]
-  
-  ;; handle the unemployed pool (patch 0)
+
+  ;; handle the unemployed pool (patch 0 0)
   ask patch 0 0 [
     set headcount 0
     set hiring-threshold 0
     set coaching-rate 0
+    set strategy "none"
+    set cumulative-revenue 0
+    set ticks-since-review 0
   ]
 end
 
 ;; initialize the workers
 to setup-turtles
   ask turtles [
-    set age ((random 450) + 200) / 10
+    set age ((random 450) + 200) / 10  ;; we might have to skew this younger, seems pretty old
     set skill-level age * 10 * ((random 10) + 100) / 100
     set turnover-probability 1
     hide-turtle
@@ -71,22 +84,42 @@ end
 to go
   turnover
   increase-age
-  
+  update-market-stats
+
   ask patches with [self != patch 0 0] [
     set revenue 0
     fill-vacancies
-    choose-activity
+    apply-strategy
     execute-activity
     set total-skill sum [skill-level] of turtles-here
-    
+
     set revenue round revenue
-    ;; TBD: adapt strategy depending on environment and results
+    set cumulative-revenue cumulative-revenue + revenue
+    set ticks-since-review ticks-since-review + 1
+
+    ;; strategy switching
+    ;;if ticks-since-review >= strategy-review-interval [
+    ;;  maybe-switch-strategy
+    ;;]
   ]
-  
+
   color-patches
-  
-  ;; increment the tick counter
   tick
+end
+
+;; ---------------------------------------
+;; Market statistics
+;; ---------------------------------------
+to update-market-stats
+  let employed turtles with [patch-here != patch 0 0]
+  ifelse any? employed
+    [ set market-mean-skill mean [skill-level] of employed ]
+    [ set market-mean-skill 0 ]
+
+  let companies patches with [self != patch 0 0]
+  ifelse any? companies
+    [ set market-mean-revenue mean [cumulative-revenue] of companies ]
+    [ set market-mean-revenue 0 ]
 end
 
 ;; ---------------------------------------
@@ -95,11 +128,38 @@ end
 
 to turnover
   ask turtles with [patch-here != patch 0 0] [
-    if ((random 10000) / 100) < turnover-probability [
-      set xcor 0
-      set ycor 0
+    let base-quit-chance turnover-probability
+
+    let my-company-mean ifelse-value (count turtles-here > 1)
+      [ mean [skill-level] of other turtles-here ]
+      [ skill-level ]
+    let relative-quality my-company-mean / max (list 1 market-mean-skill)
+
+    let adjusted-chance base-quit-chance * (2 - relative-quality)
+    set adjusted-chance max (list 0 (min (list 10 adjusted-chance)))
+
+    if ((random 10000) / 100) < adjusted-chance [
+      let destination nobody
+      if skill-level > market-mean-skill [
+        let my-skill skill-level
+        let my-patch patch-here
+        let poachers patches with [
+          self != patch 0 0 and
+          self != my-patch and
+          count turtles-here < headcount and
+          my-skill > hiring-threshold
+        ]
+        if any? poachers [
+          set destination max-one-of poachers [total-skill / max (list 1 (count turtles-here))]
+        ]
+      ]
+      ifelse destination != nobody [
+        move-to destination
+      ] [
+        setxy 0 0
+        hide-turtle
+      ]
       set turnover-probability 0
-      hide-turtle
     ]
   ]
 end
@@ -126,7 +186,7 @@ to fill-vacancies
   if (vacancies > 0) [
     ;; Identify all qualified candidates, sorted by skill level
     let candidates (turtles-on patch 0 0) with [skill-level > hiring-threshold]
-    
+
     if any? candidates [
       ;; get up to vacancies candidates from the pool, sorted by skill level descending
       ask max-n-of (min (list vacancies (count candidates))) candidates [skill-level] [
@@ -136,38 +196,137 @@ to fill-vacancies
   ]
 end
 
-;; choose the activity, needs to run in patch context
-to choose-activity
-  ifelse ((random 100) < coaching-rate)
-    [ set activity "coach" ]
-    [ set activity "work" ]
+;; ---------------------------------------
+;; Strategy logic
+;; ---------------------------------------
+
+;; TALENT FACTORY: coach hard when behind the market, ease off when ahead
+to apply-strategy
+  if not any? turtles-here [ stop ]
+  if strategy = "talent-factory" [
+    let my-mean-skill ifelse-value (any? turtles-here) [mean [skill-level] of turtles-here] [0]
+    let skill-gap (market-mean-skill - my-mean-skill)
+    ;; coaching rate scales with how far behind we are (0-50%)
+    ;; sigmoid-ish: when gap is 0, coach ~5%. when gap is large, coach up to ~50%
+    let dynamic-rate 5 + (45 * max (list 0 (skill-gap / (abs skill-gap + 100))))
+    ifelse (random 100 < dynamic-rate)
+      [ set activity "coach-all" ]
+      [ set activity "work" ]
+    ;; low hiring threshold — we'll train them up
+    set hiring-threshold min-hiring-threshold
+  ]
+
+  ;; CHERRY PICKER: never coach, but adjust standards based on staffing pressure
+  if strategy = "cherry-picker" [
+    set activity "work"
+    let fill-ratio count turtles-here / max (list 1 headcount)
+    ;; when understaffed, lower threshold; when full, raise it
+    ;; non-linear: threshold drops steeply when very understaffed
+    set hiring-threshold min-hiring-threshold + (max-hiring-threshold - min-hiring-threshold) * (fill-ratio ^ 2)
+  ]
+
+  ;; GOLDILOCKS: coach the bottom half, work the top half. split adapts to revenue
+  if strategy = "goldilocks" [
+    set activity "coach-selective"
+    ;; hiring threshold sits in the middle
+    set hiring-threshold (min-hiring-threshold + max-hiring-threshold) / 2
+  ]
 end
 
 ;; executes the chosen activity, needs to run in patch context
 to execute-activity
-  ask turtles-here [
-    ifelse (activity = "coach") [
-      set skill-level (skill-level + 10) ;; TODO: I think diminishing returns are very important, e.g. a junior learns way more, if a senior with 10y experience goes to a schooling he learns little: set skill-level (skill-level + (10 / (1 + skill-level / 100)))
-      set turnover-probability (max (list 0 (turnover-probability - 1)))
-    ] [
-      set skill-level (skill-level + 1)
-      set turnover-probability (turnover-probability + 0.1) ;; TODO: This might be too aggressive
-      set revenue (revenue + skill-level)
+  if not any? turtles-here [ stop ]
+  if activity = "work" [
+    ask turtles-here [
+      do-work
     ]
-    set skill-level round skill-level
+  ]
+  if activity = "coach-all" [
+    ask turtles-here [
+      do-coaching
+    ]
+  ]
+  if activity = "coach-selective" [
+    ;; Goldilocks: bottom half coaches, top half works
+    ;; The split shifts based on revenue performance
+    let revenue-ratio ifelse-value (market-mean-revenue > 0)
+      [ cumulative-revenue / market-mean-revenue ]
+      [ 1 ]
+    ;; when underperforming, coach more people (up to 70%); when ahead, coach fewer (down to 30%)
+    let coach-fraction 0.5 + (0.2 * (1 - min (list 2 revenue-ratio)))
+    set coach-fraction max (list 0.3 (min (list 0.7 coach-fraction)))
+
+    let n-here count turtles-here
+    if n-here > 0 [
+      let n-to-coach round (n-here * coach-fraction)
+      ;; coach the lowest-skilled workers
+      ask min-n-of (min (list n-to-coach n-here)) turtles-here [skill-level] [
+        do-coaching
+      ]
+      ;; work the rest
+      ask turtles-here with [not member? self min-n-of (min (list n-to-coach n-here)) turtles-here [skill-level]] [
+        do-work
+      ]
+    ]
   ]
 end
 
+to do-coaching  ;; turtle procedure
+  set skill-level skill-level + coaching-skill-increase / (1 + skill-level / 300)
+  set turnover-probability (max (list 0 (turnover-probability - working-turnover-decrease)))
+  set skill-level round skill-level
+end
+
+to do-work  ;; turtle procedure
+  set skill-level skill-level + working-skill-increase / (1 + skill-level / 150)
+  set turnover-probability (turnover-probability + working-turnover-increase)
+  set revenue revenue + skill-level
+  set skill-level round skill-level
+end
+
+;; ---------------------------------------
+;; Strategy switching
+;; ---------------------------------------
+to maybe-switch-strategy
+  ;; only switch if underperforming
+  if cumulative-revenue < market-mean-revenue * 0.8 [
+    ;; 30% chance to switch when underperforming
+    if random 100 < 30 [
+      ;; pick a different strategy
+      let other-strategies filter [s -> s != strategy] ["talent-factory" "cherry-picker" "goldilocks"]
+      set strategy one-of other-strategies
+    ]
+  ]
+  ;; reset review counters
+  set cumulative-revenue 0
+  set ticks-since-review 0
+end
+
 to color-patches
-  ;; set the color gradient
-  let max-patch-skill-level max [total-skill] of patches
-  let min-patch-skill-level min [total-skill] of patches
-  ask patches [
-    set pcolor scale-color green total-skill min-patch-skill-level max-patch-skill-level
+  let companies patches with [self != patch 0 0]
+  if not any? companies [ stop ]
+  let max-patch-skill-level max [total-skill] of companies
+  let min-patch-skill-level min [total-skill] of companies
+  if max-patch-skill-level = min-patch-skill-level [
+    set max-patch-skill-level min-patch-skill-level + 1
+  ]
+  ask patch 0 0 [
+    set pcolor gray - 2
+  ]
+  ask companies [
+    if strategy = "talent-factory" [
+      set pcolor scale-color blue total-skill min-patch-skill-level max-patch-skill-level
+    ]
+    if strategy = "cherry-picker" [
+      set pcolor scale-color red total-skill min-patch-skill-level max-patch-skill-level
+    ]
+    if strategy = "goldilocks" [
+      set pcolor scale-color violet total-skill min-patch-skill-level max-patch-skill-level
+    ]
   ]
 end]]></code>
   <widgets>
-    <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-9" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="0" updateMode="1" maxPxcor="9" minPxcor="0"></view>
+    <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-2" height="154" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="154" tickCounterLabel="ticks" maxPycor="0" updateMode="1" maxPxcor="2" minPxcor="0"></view>
     <button x="55" y="105" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="120" display="Run Simulation">go</button>
     <button x="185" y="105" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="105" display="Step Simulation">go</button>
     <button x="55" y="45" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
@@ -210,13 +369,18 @@ set-histogram-num-bars 20</update>
     <slider x="1325" step="0.1" y="250" max="10" width="250" display="min-coaching-rate" height="50" min="0" direction="Horizontal" default="0.0" variable="min-coaching-rate"></slider>
     <slider x="1325" step="1" y="190" max="400" width="250" display="max-hiring-threshold" height="50" min="min-hiring-threshold" direction="Horizontal" default="321.0" variable="max-hiring-threshold"></slider>
     <slider x="1325" step="1" y="130" max="200" width="250" display="min-hiring-threshold" height="50" min="0" direction="Horizontal" default="96.0" variable="min-hiring-threshold"></slider>
-    <slider x="1325" step="1" y="70" max="400" width="250" display="max-headcount" height="50" min="min-headcount" direction="Horizontal" default="30.0" variable="max-headcount"></slider>
+    <slider x="1325" step="1" y="70" max="400" width="250" display="max-headcount" height="50" min="min-headcount" direction="Horizontal" default="10.0" variable="max-headcount"></slider>
     <slider x="1325" step="1" y="10" max="400" width="250" display="min-headcount" height="50" min="1" direction="Horizontal" default="1.0" variable="min-headcount"></slider>
-    <slider x="1325" step="1" y="370" max="100" width="250" display="coaching-skill-increase" height="50" min="0" direction="Horizontal" default="18.0" variable="coaching-skill-increase"></slider>
-    <slider x="1325" step="1" y="430" max="50" width="250" display="working-skill-increase" height="50" min="0" direction="Horizontal" default="4.0" variable="working-skill-increase"></slider>
-    <slider x="1325" step="0.1" y="490" max="10" width="250" display="working-turnover-increase" height="50" min="0" direction="Horizontal" default="10.0" variable="working-turnover-increase"></slider>
-    <slider x="1325" step="0.1" y="550" max="20" width="250" display="working-turnover-decrease" height="50" min="0" direction="Horizontal" default="10.0" variable="working-turnover-decrease"></slider>
-    <note x="355" y="520" backgroundDark="0" fontSize="12" width="400" markdown="false" height="30" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">The patches are colored porportionally to the total skill</note>
+    <slider x="1325" step="1" y="370" max="100" width="250" display="coaching-skill-increase" height="50" min="0" direction="Horizontal" default="100.0" variable="coaching-skill-increase"></slider>
+    <slider x="1325" step="1" y="430" max="50" width="250" display="working-skill-increase" height="50" min="0" direction="Horizontal" default="1.0" variable="working-skill-increase"></slider>
+    <slider x="1325" step="0.1" y="490" max="10" width="250" display="working-turnover-increase" height="50" min="0" direction="Horizontal" default="8.6" variable="working-turnover-increase"></slider>
+    <slider x="1325" step="0.1" y="550" max="20" width="250" display="working-turnover-decrease" height="50" min="0" direction="Horizontal" default="20.0" variable="working-turnover-decrease"></slider>
+    <slider x="1325" step="10" y="610" max="500" width="250" display="strategy-review-interval" height="50" min="50" direction="Horizontal" default="500.0" variable="strategy-review-interval"></slider>
+    <note x="355" y="520" backgroundDark="0" fontSize="12" width="400" markdown="false" height="91" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">The patches are colored porportionally to the total skill
+
+BLUE: Talent Factory [coach hard, hire low]
+RED: Cherry Picker [never coach, hire high]
+VIOLET: Goldilocks [coach bottom half, work top half]</note>
   </widgets>
   <info>## WHAT IS IT?
 (a general understanding of what the model is trying to show or explain)
@@ -1126,4 +1290,36 @@ For each simulation step (tick), developers and companies act in the following s
     </shape>
   </linkShapes>
   <previewCommands>setup repeat 75 [ go ]</previewCommands>
+  <experiments>
+    <experiment name="experiment" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="false">
+      <setup>setup</setup>
+      <go>go</go>
+      <exitCondition><![CDATA[ticks >= 20000]]></exitCondition>
+      <metrics>
+        <metric>ifelse-value any? patches with [strategy = "talent-factory"] [ mean [cumulative-revenue] of patches with [strategy = "talent-factory"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? patches with [strategy = "cherry-picker"] [ mean [cumulative-revenue] of patches with [strategy = "cherry-picker"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? patches with [strategy = "goldilocks"] [ mean [cumulative-revenue] of patches with [strategy = "goldilocks"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? turtles with [patch-here != patch 0 0] [ mean [skill-level] of turtles with [patch-here != patch 0 0] ] [ 0 ]</metric>
+        <metric>count turtles with [patch-here = patch 0 0]</metric>
+      </metrics>
+      <constants>
+        <steppedValueSet variable="coaching-skill-increase" first="1" step="2" last="30"></steppedValueSet>
+      </constants>
+    </experiment>
+    <experiment name="strategy-comparision" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true">
+      <setup>setup</setup>
+      <go>go</go>
+      <exitCondition><![CDATA[ticks >= 20000]]></exitCondition>
+      <metrics>
+        <metric>ifelse-value any? patches with [strategy = "talent-factory"] [ mean [total-skill] of patches with [strategy = "talent-factory"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? patches with [strategy = "cherry-picker"] [ mean [total-skill] of patches with [strategy = "cherry-picker"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? patches with [strategy = "goldilocks"] [ mean [total-skill] of patches with [strategy = "goldilocks"] ] [ 0 ]</metric>
+        <metric>ifelse-value any? turtles with [patch-here != patch 0 0] [ mean [skill-level] of turtles with [patch-here != patch 0 0] ] [ 0 ]</metric>
+        <metric>count turtles with [patch-here = patch 0 0]</metric>
+      </metrics>
+      <constants>
+        <steppedValueSet variable="coaching-skill-increase" first="1" step="2" last="30"></steppedValueSet>
+      </constants>
+    </experiment>
+  </experiments>
 </model>

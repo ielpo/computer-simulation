@@ -47,8 +47,8 @@ to setup-patches
     set headcount (random (max-headcount - min-headcount + 1)) + min-headcount
     set hiring-threshold random max-hiring-threshold
     set coaching-rate random max-coaching-rate
-    ;; set strategy one-of ["talent-factory" "cherry-picker" "goldilocks"]
-    set strategy item (count patches with [strategy != "none" and strategy != 0] mod 3) ["talent-factory" "cherry-picker" "goldilocks"]
+    set strategy one-of ["talent-factory" "cherry-picker" "goldilocks"]
+    ;;set strategy item (count patches with [strategy != "none" and strategy != 0] mod 3) ["talent-factory" "cherry-picker" "goldilocks"]
     set cumulative-revenue 0
     set ticks-since-review 0
     sprout headcount
@@ -98,9 +98,9 @@ to go
     set ticks-since-review ticks-since-review + 1
 
     ;; strategy switching
-    ;;if ticks-since-review >= strategy-review-interval [
-    ;;  maybe-switch-strategy
-    ;;]
+    if ticks-since-review >= strategy-review-interval [
+      maybe-switch-strategy
+    ]
   ]
 
   color-patches
@@ -326,7 +326,7 @@ to color-patches
   ]
 end]]></code>
   <widgets>
-    <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-2" height="154" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="154" tickCounterLabel="ticks" maxPycor="0" updateMode="1" maxPxcor="2" minPxcor="0"></view>
+    <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-9" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="0" updateMode="1" maxPxcor="9" minPxcor="0"></view>
     <button x="55" y="105" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="120" display="Run Simulation">go</button>
     <button x="185" y="105" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="105" display="Step Simulation">go</button>
     <button x="55" y="45" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
@@ -381,6 +381,25 @@ set-histogram-num-bars 20</update>
 BLUE: Talent Factory [coach hard, hire low]
 RED: Cherry Picker [never coach, hire high]
 VIOLET: Goldilocks [coach bottom half, work top half]</note>
+    <plot x="305" autoPlotX="true" yMax="10.0" autoPlotY="true" y="705" xMin="0.0" height="350" legend="false" xMax="10.0" yMin="0.0" width="490" display="Company Strategies">
+      <setup></setup>
+      <update></update>
+      <pen interval="1.0" mode="0" display="talent-factory" color="-13345367" legend="true">
+        <setup></setup>
+        <update>plot count patches with [strategy = "talent-factory"]</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="cherry-picker" color="-2674135" legend="true">
+        <setup></setup>
+        <update>plot count patches with [strategy = "cherry-picker"]</update>
+      </pen>
+      <pen interval="1.0" mode="0" display="goldilocks" color="-8630108" legend="true">
+        <setup></setup>
+        <update>plot count patches with [strategy = "goldilocks"]</update>
+      </pen>
+    </plot>
+    <monitor x="305" precision="17" y="620" height="60" fontSize="11" width="100" display="Talent Factory">count patches with [strategy = "talent-factory"]</monitor>
+    <monitor x="415" precision="17" y="620" height="60" fontSize="11" width="100" display="Cherry Picker">count patches with [strategy = "cherry-picker"]</monitor>
+    <monitor x="525" precision="17" y="620" height="60" fontSize="11" width="100" display="Goldilocks">count patches with [strategy = "goldilocks"]</monitor>
   </widgets>
   <info>## WHAT IS IT?
 (a general understanding of what the model is trying to show or explain)

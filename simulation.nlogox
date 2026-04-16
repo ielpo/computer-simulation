@@ -20,6 +20,8 @@ patches-own [
 
 globals [
   ticks-per-year
+  turnovers-this-tick
+  coaching-rate-options
   market-mean-skill         ;; average skill across all employed workers
   market-mean-revenue       ;; average revenue across all companies
 ]
@@ -32,6 +34,8 @@ to setup
   set-default-shape turtles "person"
 
   set ticks-per-year 100
+  
+  set coaching-rate-options [1 2 3 4 5 6 7 8 9 10 11 12]
 
   setup-patches
   setup-turtles
@@ -46,9 +50,9 @@ to setup-patches
   ask patches with [self != patch 0 0] [
     set headcount (random (max-headcount - min-headcount + 1)) + min-headcount
     set hiring-threshold random max-hiring-threshold
-    set coaching-rate random max-coaching-rate
+    set coaching-rate one-of coaching-rate-options
     set strategy one-of ["talent-factory" "cherry-picker" "goldilocks"]
-    ;;set strategy item (count patches with [strategy != "none" and strategy != 0] mod 3) ["talent-factory" "cherry-picker" "goldilocks"]
+
     set cumulative-revenue 0
     set ticks-since-review 0
     sprout headcount
@@ -82,6 +86,7 @@ end
 ;; go - run one simulation timestep
 ;; ---------------------------------------
 to go
+  set turnovers-this-tick 0
   turnover
   increase-age
   update-market-stats
@@ -159,6 +164,7 @@ to turnover
         setxy 0 0
         hide-turtle
       ]
+      set turnovers-this-tick (turnovers-this-tick + 1)
       set turnover-probability 0
     ]
   ]
@@ -303,27 +309,59 @@ to maybe-switch-strategy
 end
 
 to color-patches
-  let companies patches with [self != patch 0 0]
-  if not any? companies [ stop ]
-  let max-patch-skill-level max [total-skill] of companies
-  let min-patch-skill-level min [total-skill] of companies
-  if max-patch-skill-level = min-patch-skill-level [
-    set max-patch-skill-level min-patch-skill-level + 1
-  ]
-  ask patch 0 0 [
-    set pcolor gray - 2
-  ]
-  ask companies [
+  ;; set the color gradient
+  let max-patch-skill-level max [total-skill] of patches
+  let min-patch-skill-level min [total-skill] of patches
+  ask patches with [self != patch 0 0] [
     if strategy = "talent-factory" [
-      set pcolor scale-color blue total-skill min-patch-skill-level max-patch-skill-level
+      set pcolor scale-color green total-skill min-patch-skill-level max-patch-skill-level
     ]
     if strategy = "cherry-picker" [
       set pcolor scale-color red total-skill min-patch-skill-level max-patch-skill-level
     ]
     if strategy = "goldilocks" [
-      set pcolor scale-color violet total-skill min-patch-skill-level max-patch-skill-level
+      set pcolor scale-color blue total-skill min-patch-skill-level max-patch-skill-level
     ]
   ]
+end
+
+;; ---------------------------------------
+;; Reporters for BehaviorSpace
+;; ---------------------------------------
+
+to-report revenue-rate
+  report mean [revenue] of patches with [self != patch 0 0]
+end
+
+to-report avg-skill
+  let workers turtles with [patch-here != patch 0 0]
+  ifelse any? workers
+    [ report mean [skill-level] of workers ]
+    [ report 0 ]
+end
+
+to-report turnover-rate
+  report turnovers-this-tick
+end
+
+;; ---------------------------------------
+;; Per-coaching-rate reporters
+;; ---------------------------------------
+
+to-report revenue-at-rate [r]
+  let group patches with [coaching-rate = r and self != patch 0 0]
+  ifelse any? group [ report mean [revenue] of group ] [ report 0 ]
+end
+
+to-report skill-at-rate [r]
+  let group patches with [coaching-rate = r and self != patch 0 0]
+  let workers turtles-on group
+  ifelse any? workers [ report mean [skill-level] of workers ] [ report 0 ]
+end
+
+to-report headcount-at-rate [r]
+  let group patches with [coaching-rate = r and self != patch 0 0]
+  ifelse any? group [ report sum [count turtles-here] of group ] [ report 0 ]
 end]]></code>
   <widgets>
     <view x="310" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-9" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="0" updateMode="1" maxPxcor="9" minPxcor="0"></view>
@@ -1310,35 +1348,39 @@ For each simulation step (tick), developers and companies act in the following s
   </linkShapes>
   <previewCommands>setup repeat 75 [ go ]</previewCommands>
   <experiments>
-    <experiment name="experiment" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="false">
+    <experiment name="coaching-rate-vs-revenue" repetitions="20" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="30000">
       <setup>setup</setup>
       <go>go</go>
-      <exitCondition><![CDATA[ticks >= 20000]]></exitCondition>
       <metrics>
-        <metric>ifelse-value any? patches with [strategy = "talent-factory"] [ mean [cumulative-revenue] of patches with [strategy = "talent-factory"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? patches with [strategy = "cherry-picker"] [ mean [cumulative-revenue] of patches with [strategy = "cherry-picker"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? patches with [strategy = "goldilocks"] [ mean [cumulative-revenue] of patches with [strategy = "goldilocks"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? turtles with [patch-here != patch 0 0] [ mean [skill-level] of turtles with [patch-here != patch 0 0] ] [ 0 ]</metric>
-        <metric>count turtles with [patch-here = patch 0 0]</metric>
+        <metric>count turtles</metric>
+        <metric>revenue-rate</metric>
+        <metric>avg-skill</metric>
+        <metric>turnover-rate</metric>
+        <metric>revenue-at-rate 1</metric>
+        <metric>revenue-at-rate 2</metric>
+        <metric>revenue-at-rate 3</metric>
+        <metric>revenue-at-rate 4</metric>
+        <metric>revenue-at-rate 5</metric>
+        <metric>revenue-at-rate 6</metric>
+        <metric>revenue-at-rate 7</metric>
+        <metric>revenue-at-rate 8</metric>
+        <metric>revenue-at-rate 9</metric>
+        <metric>revenue-at-rate 10</metric>
+        <metric>revenue-at-rate 11</metric>
+        <metric>revenue-at-rate 12</metric>
+        <metric>skill-at-rate 1</metric>
+        <metric>skill-at-rate 2</metric>
+        <metric>skill-at-rate 3</metric>
+        <metric>skill-at-rate 4</metric>
+        <metric>skill-at-rate 5</metric>
+        <metric>skill-at-rate 6</metric>
+        <metric>skill-at-rate 7</metric>
+        <metric>skill-at-rate 8</metric>
+        <metric>skill-at-rate 9</metric>
+        <metric>skill-at-rate 10</metric>
+        <metric>skill-at-rate 11</metric>
+        <metric>skill-at-rate 12</metric>
       </metrics>
-      <constants>
-        <steppedValueSet variable="coaching-skill-increase" first="1" step="2" last="30"></steppedValueSet>
-      </constants>
-    </experiment>
-    <experiment name="strategy-comparision" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true">
-      <setup>setup</setup>
-      <go>go</go>
-      <exitCondition><![CDATA[ticks >= 20000]]></exitCondition>
-      <metrics>
-        <metric>ifelse-value any? patches with [strategy = "talent-factory"] [ mean [total-skill] of patches with [strategy = "talent-factory"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? patches with [strategy = "cherry-picker"] [ mean [total-skill] of patches with [strategy = "cherry-picker"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? patches with [strategy = "goldilocks"] [ mean [total-skill] of patches with [strategy = "goldilocks"] ] [ 0 ]</metric>
-        <metric>ifelse-value any? turtles with [patch-here != patch 0 0] [ mean [skill-level] of turtles with [patch-here != patch 0 0] ] [ 0 ]</metric>
-        <metric>count turtles with [patch-here = patch 0 0]</metric>
-      </metrics>
-      <constants>
-        <steppedValueSet variable="coaching-skill-increase" first="1" step="2" last="30"></steppedValueSet>
-      </constants>
     </experiment>
   </experiments>
 </model>

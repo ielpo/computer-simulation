@@ -1292,39 +1292,29 @@ Developed by
   </linkShapes>
   <previewCommands>setup repeat 75 [ go ]</previewCommands>
   <experiments>
-    <experiment name="coaching-rate-vs-revenue" repetitions="20" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="30000">
+    <experiment name="coaching-rate-vs-revenue" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="10000">
       <setup>setup</setup>
       <go>go</go>
       <metrics>
         <metric>count turtles</metric>
-        <metric>revenue-rate</metric>
-        <metric>avg-skill</metric>
+        <metric>revenue-mean</metric>
+        <metric>skill-mean</metric>
         <metric>turnover-rate</metric>
-        <metric>revenue-at-rate 1</metric>
-        <metric>revenue-at-rate 2</metric>
-        <metric>revenue-at-rate 3</metric>
-        <metric>revenue-at-rate 4</metric>
-        <metric>revenue-at-rate 5</metric>
-        <metric>revenue-at-rate 6</metric>
-        <metric>revenue-at-rate 7</metric>
-        <metric>revenue-at-rate 8</metric>
-        <metric>revenue-at-rate 9</metric>
-        <metric>revenue-at-rate 10</metric>
-        <metric>revenue-at-rate 11</metric>
-        <metric>revenue-at-rate 12</metric>
-        <metric>skill-at-rate 1</metric>
-        <metric>skill-at-rate 2</metric>
-        <metric>skill-at-rate 3</metric>
-        <metric>skill-at-rate 4</metric>
-        <metric>skill-at-rate 5</metric>
-        <metric>skill-at-rate 6</metric>
-        <metric>skill-at-rate 7</metric>
-        <metric>skill-at-rate 8</metric>
-        <metric>skill-at-rate 9</metric>
-        <metric>skill-at-rate 10</metric>
-        <metric>skill-at-rate 11</metric>
-        <metric>skill-at-rate 12</metric>
+        <metric>sorted-skill</metric>
+        <metric>sorted-coaching</metric>
       </metrics>
+    </experiment>
+    <experiment name="coaching-rate-vs-turnover" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="10000">
+      <setup>setup</setup>
+      <go>go</go>
+      <metrics>
+        <metric>turnover-rate</metric>
+        <metric>sorted-coaching</metric>
+      </metrics>
+      <constants>
+        <steppedValueSet variable="working-turnover-increase" first="0.1" step="0.1" last="0.5"></steppedValueSet>
+        <steppedValueSet variable="coaching-turnover-decrease" first="1" step="0.2" last="3"></steppedValueSet>
+      </constants>
     </experiment>
   </experiments>
 </model>

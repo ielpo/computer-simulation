@@ -134,6 +134,7 @@ to increase-age ;; observer procedure
         set age 20 + random 10
         set skill-level round (1000 + ((age - 20) / 45) * 6000 + (random-float 200))
         set turnover-probability 1
+        set last-coaching ticks
         hide-turtle
       ]
       die
@@ -183,9 +184,9 @@ to do-coaching  ;; turtle procedure
 end
 
 to do-work  ;; turtle procedure
-  set skill-level round (skill-level + working-skill-increase)
+  set skill-level round (min (list (skill-level + working-skill-increase) coaching-skill-ceiling))
   set turnover-probability (turnover-probability + working-turnover-increase)
-  if (skill-decay and ((ticks - last-coaching) > skill-decay-threshold)) [ set skill-level round (skill-level * (1 - skill-decay-rate)) ]
+  if (skill-decay and ((ticks - last-coaching) > skill-decay-threshold)) [ set skill-level round (skill-level * (1 - skill-decay-rate / ticks-per-year)) ]
 end
 
 to update-market-stats ;; observer procedure

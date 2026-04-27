@@ -88,13 +88,121 @@ Assumptions and limitations
 - Companies are structurally homogeneous except for stochastic initialization: company heterogeneity beyond these draws is not modelled.
 - Behavior of agents: developers differ only by individual state variables. Preferences, network effects, and company reputations are abstracted.
 
-Validation and modeling-cycle mapping
+## Simulation Model Specification
 
-- Conceptual stage: define entities, processes, and hypothesized causal chains (this document).
-- Formalization & implementation: the conceptual rules map to NetLogo procedures (`turnover`, `fill-vacancies`, `choose-activity`, `execute-activity`, `do-coaching`, `do-work`, `update-strategy`) in `simulation.nlogox`.
-- Verification: unit-check procedures (e.g., hiring fills to headcount when candidates available; coaching reduces turnover) and use small deterministic seeds to reproduce expected micro-level behavior.
-- Validation: compare emergent patterns (e.g., revenue vs. coaching-rate curves, market mean skill trajectories) against stylized expectations and sensitivity analyses (toggle `diminishing-returns-coaching`, `skill-decay`, `dynamic-*` strategies).
-- Experimentation: use BehaviorSpace sweeps and recording reporters (`revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, etc.) to test hypotheses and map phase-space of outcomes.
+
+**TO REVIEW - written by sloperator**
+
+
+In order of execution, all other variables are zero-initialized
+
+* ticks-per-year: 100
+* coaching-rate-options: Integer list between 0 and max-coaching-rate
+* headcount: Rounded normal distribution using global parameters
+* hiring-threshold: Rounded normal distribution using global parameters
+* coaching-rate: One of integer coaching rates up to global parameter value
+* age: Random between 20 and 64, with weighted distribution
+* skill-level: Proportional to age with random offset
+* turnover-probability: 1
+
+### Timestep
+
+For each tick, developers and companies act in the following sequence:
+
+**Developer actions**
+
+* Decide whether to leave the company (turnover-probability)
+* Increase age and check for retirement
+
+**Company actions**
+
+* Fill vacancies (hiring-threshold)
+* Choose activity (coaching-rate)
+  * _Coaching day_: Developers increase their skill level and the turnover probability decreases (satisfied, growing workers stay).
+  * _Working day_: Developers focus on regular work and their turnover probability increases (stagnating workers become more likely to leave). Company revenue increases.
+* Update the company strategy at the fixed interval
+* Update the color of the patches
+
+
+- Entities and state:
+  - Agents: Developers (turtles) with state variables: `age`, `skill-level`, `turnover-probability`, `last-coaching`.
+  - Companies: represented by patches with state: `headcount`, `total-skill`, `hiring-threshold`, `coaching-rate`, `effective-coaching-rate`, `activity`, `revenue`, `cumulative-revenue`, `last-review`.
+  - Globals: `ticks-per-year`, `turnovers-this-tick`, `coaching-rate-options`, `market-mean-skill`, `market-mean-revenue` and the set of model parameters controlling hiring, coaching, turnover, decay, and strategy updates.
+
+- Topology: Companies live on patches (one company per patch except patch 0 0 which is the unemployed pool). Developers occupy patches (work for the company on that patch) or patch 0 0 when unemployed.
+
+- Time / Scheduling:
+  - Discrete-time, synchronous ticks. One tick is the model's basic time-step; `ticks-per-year` maps ticks to years.
+  - Per tick schedule (observer/agent ordering):
+    1. Turnover: developers probabilistically leave companies.
+    2. Increase age and retire if applicable.
+    3. Companies (patches) fill vacancies according to `hiring-threshold`.
+    4. Companies choose an `activity` (coach vs work) determined by `coaching-rate` and vacancy pressure.
+    5. Companies execute activity: on coaching days developers gain skill and reduce turnover probability; on working days developers gain minimal skill and turnover probability increases; companies accumulate revenue.
+    6. Strategy review: at intervals (`strategy-review-interval`) companies may update `hiring-threshold` or `coaching-rate` according to vacancy pressure and configured dynamic strategies.
+
+- Initialization:
+  - All state variables zero-initialized, then patches and turtles are initialized.
+  - `ticks-per-year` default 100.
+  - `coaching-rate-options` is generated as an integer list up to `max-coaching-rate`.
+  - Each patch is assigned a `headcount` sampled from a rounded normal distribution (controlled by `headcount-mean` and `headcount-variance`) and a `hiring-threshold` similarly sampled.
+  - Developers are created with ages sampled from a distribution biased toward younger ages, `skill-level` initialized proportional to age plus noise, and `turnover-probability` set to 1.
+
+- Key processes (model logic):
+  - Turnover: each developer leaves with their personal `turnover-probability` and moves to the unemployed pool (patch 0 0).
+  - Hiring: patches attempt to hire until `headcount` is met, selecting candidates whose skill >= `hiring-threshold` (threshold can adjust dynamically).
+  - Coaching vs Work: firms split time between coaching (developers gain `coaching-skill-increase`, turnover decreases, less revenue that tick) and working (developers gain `working-skill-increase`, turnover increases, firms earn revenue).
+  - Diminishing returns and ceilings: coaching gains can be limited by `coaching-skill-ceiling` and `diminishing-returns-coaching`.
+  - Skill decay: optional decay if developers spend long periods without coaching, controlled by `skill-decay-threshold` and `skill-decay-rate`.
+  - Strategy updates: at intervals, firms may raise/lower `hiring-threshold` and alter `coaching-rate` based on vacancy pressure, subject to configured ceilings/cutoffs.
+
+- Inputs (parameters): Headcount distribution (`headcount-mean`, `headcount-variance`), hiring thresholds, coaching parameters (`coaching-skill-increase`, `coaching-turnover-decrease`, `max-coaching-rate`, etc.), turnover dynamics (`working-turnover-increase`), skill decay controls, and strategy dynamics (`dynamic-hiring-strategy`, `dynamic-coaching-strategy`, `strategy-review-interval`, `vacancy-rate-cutoff`).
+
+- Outputs / metrics (BehaviorSpace reporters and UI monitors):
+  - Market-level: `market-mean-skill`, `market-mean-revenue`, `turnovers-this-tick`.
+  - Firm-level (patch reporters): per-patch `revenue`, `cumulative-revenue`, `total-skill`, `hiring-threshold`, `coaching-rate`.
+  - Agent-level: `skill-mean`, `turnover-rate` and distributions (skills, age, coaching-rate) used in plots.
+  - BehaviorSpace reporters: aggregated metrics such as `revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, `skill-at-coaching-rate`, `headcount-at-coaching-rate`.
+
+
+### Pseudocode
+
+```
+Function tick:
+  For each Agent:
+    turnover-probability()
+    increase-age()
+  For each Company:
+    fill-vacancies()
+    choose-activity()
+  For each Agent in Company:
+    If activity is coaching:
+      decrease-agent-turnover()
+    Else:
+      increase-agent-turnover()
+      do-work()
+
+Function turnover-probability:
+  If random > agent-turnover:
+    leave-company()
+
+Function increase-age:
+  Increment agent.age
+  If agent.age >= 65:
+    Die (retire)
+    Spawn new Agent
+
+Function fill-vacancies:
+  For each vacancy:
+    For each unemployed agent:
+      If agent.skill >= company.hiring-threshold
+        hire-agent()
+        Exit loop 
+
+Function do-work:
+  Increase company.output
+  Increment agent.skill-level
+```
 
 ## Implementation
 
@@ -156,7 +264,12 @@ Validation and modeling-cycle mapping
 | dynamic-coaching-strategy    | Enable changing the coaching rate when updating strategy          |
 | max-coaching-rate            | Maximum allowed coaching rate                                     |
 
-## Credits
+
+# Experiments
+
+
+
+# Credits
 Developed by
 - Güntensperger Raphael
 - Ielpo Gianluca

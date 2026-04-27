@@ -2,29 +2,99 @@
 NetLogo implementation for the course Using Computer Simulations for Understanding Complex Systems.
 
 ## Development
-Using NetLogo version 7.0.3
+- NetLogo version 7.0.3
+- uv Python dependency management tool, [docs.astral.sh/uv](https://docs.astral.sh/uv/#installation)
 
-## Data Analysis
+### Data Analysis
 Python scripts to analyse results of simulation runs and compute statistics.
-Could be integrated into NetLogo, as it provides a Python integration.
 
-## Run BehaviorSpace from CLI
+### Run BehaviorSpace from CLI
 Use the helper script to run NetLogo BehaviorSpace experiments in headless mode.
 
 List experiments defined in the model:
 
 ```bash
-python run_behaviorspace.py --list-experiments
+uv run run_behaviorspace.py --list-experiments
 ```
 
 Run an experiment:
 
 ```bash
-python run_behaviorspace.py --experiment coaching-rate-vs-revenue
+uv run run_behaviorspace.py --experiment coaching-rate-vs-revenue
 ```
 
 If NetLogo is not on PATH, set `NETLOGO_HOME` or pass `--netlogo-home` / `--headless-cmd`.
 Outputs are written to `output/` by default.
+
+---
+
+# Modeling
+
+## Conceptual Model
+
+This model explores the effects related to software developer training on company performance within an ecosystem of competing software companies.
+
+Purpose: Explore how company-level training of developers affects firm performance and workforce mobility in an ecosystem of competing software companies.
+- **Goal**: Understand how firm-level investment in training affects firm performance, workforce skill distribution, and workforce mobility at both individual and market scale.
+- **Research question**: Under which conditions do adaptive hiring and coaching strategies improve long-term firm revenue and retention, and how do they affect market-level skill and turnover dynamics?
+
+Companies invest different amounts in developer training. Developers improve skills and may move between companies, spreading knowledge across the ecosystem.
+
+Companies face a strategic trade-off:
+- **Invest in training** to improve developers skills, leading to higher output over time. However, developers are less productive during training and once they become more skilled, they may leave for another company.
+- **Hire already skilled developers** and avoid investing in training. This carries the risk that developers may leave due to a lack of growth and if too many companies follow this strategy, it raises the question of how delevopers move on from the junior level.
+
+Model boundaries and scope
+
+- Included: software companies and individual developers, hiring and turnover dynamics, training vs. working trade-offs, simple firm and developer strategy updating.
+- Excluded: wages/salaries, project-level allocation, developer specialization, management decisions as well as team dynamics, company-specific knowledge, and software quality.
+
+Model components
+
+- Developer (mobile agent): age, skill level, propensity to leave company.
+- Company (immobile agent): target headcount, hiring threshold, training rate, per-tick revenue and cumulative revenue, hiring and training strategy.
+- Unemployed pool: place for developers to stay if not assigned to a company, skill stagnates in this state.
+
+| Behavior | Agent | Description |
+|---|---|---|
+| Determine activity | Company | Each firm has a policy on training, this can be affected by vacancies and is updated at regular intervals. |
+| Work | Developer | Execute work for the company, increases the revenue depending on the skill level. Decreases worker satisfaction, slightly increases skill level. |
+| Train | Developer | Improve the skills of employees |
+| Skill decay | Developer | Represents technological developments, skills get outdated over time. |
+| Turnover | Developer | Developers can decide to leave companies and either join the unemployed pool or another company. |
+| Hiring | Company | Companies hire from the unemployed pool until target headcount, selecting candidates whose skill meets their criteria. |
+| Compare to peers | Company and Developer | Agent can compare itself with its peers. This influences how satisfied a developer is, or how the company updates its strategy. |
+| Strategy update | Company | At configured intervals firms may adjust criteria in response to vacancy pressure, performance, and market situation. |
+
+Temporal and spatial scales
+
+- Time: discrete synchronous ticks representing working days, fixed number of ticks in a year.
+- Topology: the developer position represents employment relationship, each developer can only be employed by one company at a time.
+
+Initialization and inputs
+
+- Patches and developers are initialized from parameterized distributions (headcount mean/variance, hiring-threshold mean/variance, age distribution). Coaching-rate options are drawn from `max-coaching-rate`.
+- Key model parameters (exposed as UI sliders/switches): coaching gains, turnover adjustments, skill ceilings and decay, strategy-review interval, vacancy cutoffs, and dynamic strategy toggles.
+
+Outputs and indicators
+
+- Firm-level: per-patch revenue, cumulative revenue, total-skill, hiring-threshold, coaching-rate.
+- Agent-level: skill distribution, age distribution, turnover counts and rates.
+- Market-level: `market-mean-skill`, `market-mean-revenue`, aggregates reported via BehaviorSpace reporters such as `revenue-mean` and `skill-mean`.
+
+Assumptions and limitations
+
+- Hiring is skill-threshold driven; no salary or offer dynamics are modelled.
+- Firms are structurally homogeneous except for stochastic initialization draws; firm heterogeneity beyond these draws is not modelled.
+- Behavior of agents is memory-light: developers differ only by tracked state variables; preferences, network effects, and firm reputations are abstracted.
+
+Validation and modeling-cycle mapping
+
+- Conceptual stage: define entities, processes, and hypothesized causal chains (this document).
+- Formalization & implementation: the conceptual rules map to NetLogo procedures (`turnover`, `fill-vacancies`, `choose-activity`, `execute-activity`, `do-coaching`, `do-work`, `update-strategy`) in `simulation.nlogox`.
+- Verification: unit-check procedures (e.g., hiring fills to headcount when candidates available; coaching reduces turnover) and use small deterministic seeds to reproduce expected micro-level behavior.
+- Validation: compare emergent patterns (e.g., revenue vs. coaching-rate curves, market mean skill trajectories) against stylized expectations and sensitivity analyses (toggle `diminishing-returns-coaching`, `skill-decay`, `dynamic-*` strategies).
+- Experimentation: use BehaviorSpace sweeps and recording reporters (`revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, etc.) to test hypotheses and map phase-space of outcomes.
 
 ## Implementation
 
@@ -85,3 +155,10 @@ Outputs are written to `output/` by default.
 | hiring-threshold-ceiling     | Upper limit for hiring threshold                                  |
 | dynamic-coaching-strategy    | Enable changing the coaching rate when updating strategy          |
 | max-coaching-rate            | Maximum allowed coaching rate                                     |
+
+## Credits
+Developed by
+- Güntensperger Raphael
+- Ielpo Gianluca
+- Schütz Michael
+- Sutter Svenja

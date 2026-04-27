@@ -73,20 +73,20 @@ Temporal and spatial scales
 
 Initialization and inputs
 
-- Patches and developers are initialized from parameterized distributions (headcount mean/variance, hiring-threshold mean/variance, age distribution). Coaching-rate options are drawn from `max-coaching-rate`.
-- Key model parameters (exposed as UI sliders/switches): coaching gains, turnover adjustments, skill ceilings and decay, strategy-review interval, vacancy cutoffs, and dynamic strategy toggles.
+- Companies and Developers are initialized from parameterized distributions. Coaching-rate options are drawn from a list.
+- Key model parameters: coaching gains, turnover adjustments, skill ceilings and decay, strategy review and effect configuration.
 
 Outputs and indicators
 
-- Firm-level: per-patch revenue, cumulative revenue, total-skill, hiring-threshold, coaching-rate.
-- Agent-level: skill distribution, age distribution, turnover counts and rates.
-- Market-level: `market-mean-skill`, `market-mean-revenue`, aggregates reported via BehaviorSpace reporters such as `revenue-mean` and `skill-mean`.
+- Company: per tick revenue, cumulative revenue, total skill, hiring threshold, coaching rate, turnover rate.
+- Developer: skill distribution, age distribution, turnover propensity.
+- Market-level: revenue distribution and mean, turnover rate.
 
 Assumptions and limitations
 
-- Hiring is skill-threshold driven; no salary or offer dynamics are modelled.
-- Firms are structurally homogeneous except for stochastic initialization draws; firm heterogeneity beyond these draws is not modelled.
-- Behavior of agents is memory-light: developers differ only by tracked state variables; preferences, network effects, and firm reputations are abstracted.
+- Hiring is driven by a skill level threshold: no salary or other dynamics are modelled.
+- Companies are structurally homogeneous except for stochastic initialization: company heterogeneity beyond these draws is not modelled.
+- Behavior of agents: developers differ only by individual state variables. Preferences, network effects, and company reputations are abstracted.
 
 Validation and modeling-cycle mapping
 

@@ -5,6 +5,10 @@ NetLogo implementation for the course Using Computer Simulations for Understandi
 - NetLogo version 7.0.3
 - uv Python dependency management tool, [docs.astral.sh/uv](https://docs.astral.sh/uv/#installation)
 
+## Setup
+
+Run `uv sync` to install all dependencies.
+
 ### Data Analysis
 Python scripts to analyse results of simulation runs and compute statistics.
 
@@ -61,9 +65,9 @@ Model components
 | Work | Developer | Execute work for the company, increases the revenue depending on the skill level. Decreases worker satisfaction, slightly increases skill level. |
 | Train | Developer | Improve the skills of employees |
 | Skill decay | Developer | Represents technological developments, skills get outdated over time. |
-| Turnover | Developer | Developers can decide to leave companies and either join the unemployed pool or another company. |
+| Turnover | Developer | Developers can decide to leave their company and either join the unemployed pool or another company. The company keeps track of the skill level and age of employees that left, this influences the propensity to leave of the remaining developers. |
 | Hiring | Company | Companies hire from the unemployed pool until target headcount, selecting candidates whose skill meets their criteria. |
-| Compare to peers | Company and Developer | Agent can compare itself with its peers. This influences how satisfied a developer is, or how the company updates its strategy. |
+| Compare to peers | Developer | The developer can compare itself with its peers. This influences how satisfied a developer is, and therefore the probability to leave. |
 | Strategy update | Company | At configured intervals firms may adjust criteria in response to vacancy pressure, performance, and market situation. |
 
 Temporal and spatial scales
@@ -91,11 +95,6 @@ Assumptions and limitations
 ## Simulation Model Specification
 
 
-**TO REVIEW - written by sloperator**
-
-
-In order of execution, all other variables are zero-initialized
-
 * ticks-per-year: 100
 * coaching-rate-options: Integer list between 0 and max-coaching-rate
 * headcount: Rounded normal distribution using global parameters
@@ -104,6 +103,7 @@ In order of execution, all other variables are zero-initialized
 * age: Random between 20 and 64, with weighted distribution
 * skill-level: Proportional to age with random offset
 * turnover-probability: 1
+
 
 ### Timestep
 
@@ -118,10 +118,38 @@ For each tick, developers and companies act in the following sequence:
 
 * Fill vacancies (hiring-threshold)
 * Choose activity (coaching-rate)
-  * _Coaching day_: Developers increase their skill level and the turnover probability decreases (satisfied, growing workers stay).
-  * _Working day_: Developers focus on regular work and their turnover probability increases (stagnating workers become more likely to leave). Company revenue increases.
+  * _Coaching day_: developers increase their skill level and the turnover probability decreases (satisfied, growing workers stay).
+  * _Working day_: developers focus on regular work and their turnover probability increases (stagnating workers become more likely to leave). Company revenue increases.
 * Update the company strategy at the fixed interval
 * Update the color of the patches
+
+**GEMINI PROPOSAL**
+
+### Dynamic Propensity to Leave
+
+| Effect | Trigger | Simulation Logic |
+| --- | --- | --- |
+| **Social Comparison** | Peer Developer (Leaver) | Increase $P_{leave}$ if a peer with a similar `skill level` has recently left the company. Similarity in technical abilities makes a peer's departure a stronger signal for the focal agent. |
+| **Survivor Burden** | Company (Employer) | Increase $P_{leave}$ if the Company's `actual headcount` is significantly below its `target headcount`. This represents "inadequate staffing," where the remaining agents face higher workloads and stress.[1, 2] |
+| **Peer Skill Support** | Peer Developer (Coworker) | Decrease $P_{leave}$ based on the total or average `skill level` of other developers in the same firm. High-skilled peers provide "instrumental support" (task assistance) that reduces individual frustration and boosts satisfaction. |
+| **Turnover Contagion** | Peer Developer (Group) | Increase $P_{leave}$ based on the frequency of recent departures (the "Domino Effect"). Multiple resignations act as a catalyst, signaling organizational instability to those who remain.[1, 3, 4] |
+
+*   **Compare to peers (Developer):** Instead of just comparing satisfaction, the developer agent checks the recent history of its coworkers. If a "similar" peer (in terms of age or skill) has left in the last $N$ ticks, the developer’s $P_{leave}$ increases by a fixed coefficient. This mimics social modeling where leaving is viewed as more acceptable or desirable because a similar peer did so.[5, 1]
+*   **Work (Developer):** Add a penalty to the satisfaction decrease calculated during work if the `headcount deficit` (Target - Actual) is high. This simulates the increased demands of "surviving" employees who must cover for vacant roles.[2]
+*   **Train (Developer):** While you have abstracted visibility, research shows that training acts as a "retention anchor" because it makes employees feel valued and supported. In your model, when a developer undergoes the `Train` activity, you can apply a direct reduction to their $P_{leave}$, representing the "Double Dividend" where investment in skills also fosters loyalty.[6, 7]
+*   **Hiring (Company):** If the company allows a high `headcount deficit` to persist, it effectively creates a feedback loop where the remaining developers are more likely to leave, potentially leading to a "collapse" of the firm's workforce.
+
+### Modeling the Propensity Update
+In each tick, an agent's propensity to leave can be updated by:
+$$P_{i,t+1} = P_{i,t} + (\alpha \cdot \text{LeaverSimilarity}) + (\beta \cdot \text{StaffingDeficit}) - (\gamma \cdot \text{PeerSkillSupport})$$
+
+Where:
+*   $\alpha$ represents the strength of **Social Comparison** (triggered when similar peers leave).
+*   $\beta$ represents the **Survivor Burden** (triggered when vacancies are high).[2]
+*   $\gamma$ represents the **Support Benefit** (proportional to the quality/skill of remaining peers).
+
+**GEMINI OUTPUT END**
+
 
 
 - Entities and state:
@@ -208,64 +236,118 @@ Function do-work:
 
 ### Variables
 
-**Turtle Variables**
+**Developer Variables**
 
-| Name                 | Description                    |
-|----------------------|--------------------------------|
-| age                  | Age in years                   |
-| skill-level          | Skill level of agent           |
-| turnover-probability | Probability of leaving company |
-| last-coaching        | Tick count at last coaching    |
+| Name | Description | Initialization |
+|---|---|---|
+| `age` | Age in years | Weighted distribution 20-65 |
+| `skill-level` | Skill level of agent | Proportional to age with random offset |
+| `propensity-to-leave` | Dissatisfaction with current company, if greater than `leaving-threshold` turnover | 0 |
+| `last-coaching` | Tick count at last coaching | 0 |
 
-**Patch Variables**
+**Company Variables**
 
-| Name               | Description                                      |
-|--------------------|--------------------------------------------------|
-| headcount          | Target number of employees                       |
-| total-skill        | Sum of skill-level of company                    |
-| hiring-threshold   | Minimum skill-level required to hire an agent    |
-| coaching-rate      | Amount of time spent training instead of working |
-| activity           | Activity chosen for current tick                 |
-| revenue            | Revenue of company for current tick              |
-| cumulative-revenue | Overall revenue of company                       |
-| last-review        | Tick count at last strategy review               |
+| Name               | Description                                      | Initialization |
+|--------------------|--------------------------------------------------|---|
+| `headcount`          | Target number of employees                       |  |
+| `total-skill`        | Sum of skill-level of company                    |  |
+| `hiring-threshold`   | Minimum skill-level required to hire an agent    |  |
+| `coaching-rate`      | Amount of time spent training instead of working |  |
+| `activity`           | Activity chosen for current tick                 |  |
+| `revenue`            | Revenue of company for current tick              |  |
+| `cumulative-revenue` | Overall revenue of company                       |  |
+| `last-review`        | Tick count at last strategy review               |  |
+| `developer-history` | List of developers that left the company, FIFO queue of size `developer-history-count` |  |
+| `developers-leaving` | Number of developers that left in this tick |  |
 
 **Global Variables**
 
 | Name                  | Description                            |
 |-----------------------|----------------------------------------|
-| ticks-per-year        | Number of ticks in one year            |
-| turnovers-this-tick   | Number of agents leaving a company     |
-| coaching-rate-options | Coaching rates that companies can use  |
-| market-mean-skill     | Mean skill across all employed workers |
-| market-mean-revenue   | Mean revenue across all companies      |
+| `ticks-per-year`        | Number of ticks in one year            |
+| `turnovers-this-tick`   | Number of agents leaving a company     |
+| `coaching-rate-options` | Coaching rates that companies can use  |
+| `developer-history-count` | Maximum number of developers that left company to keep track of  |
+| `market-mean-skill`     | Mean skill across all employed workers |
+| `market-mean-revenue`   | Mean revenue across all companies      |
 
 **Global Parameters**
 
-| Name                         | Description                                                       |
+| Name | Description |
 |------------------------------|-------------------------------------------------------------------|
-| headcount-mean               | Mean for headcount distribution                                   |
-| headcount-variance           | Variance for headcount distribution                               |
-| hiring-threshold-mean        | Mean for hiring threshold distribution                            |
-| hiring-threshold-variance    | Variance for hiring threshold distribution                        |
-| diminishing-returns-coaching | Enable diminishing returns when coaching                          |
-| coaching-skill-ceiling       | Upper limit for skill level with diminished returns               |
-| working-turnover-increase    | Increase in turnover probability when working                     |
-| coaching-turnover-decrease   | Decrease in turnover probability when coaching                    |
-| coaching-skill-increase      | Skill level increase when coaching                                |
-| working-skill-increase       | Skill level increase when working                                 |
-| skill-decay                  | Enable skill decay when no coaching happens                       |
-| skill-decay-threshold        | Threshold after which decay starts                                |
-| skill-decay-rate             | Rate at which skill decays per tick                               |
-| strategy-review-interval     | Ticks between strategy reviews                                    |
-| dynamic-hiring-strategy      | Enable changing hiring threshold when updating strategy           |
-| vacancy-rate-cutoff          | Maximal allowed vacancy rate before hiring threshold is decreased |
-| hiring-threshold-ceiling     | Upper limit for hiring threshold                                  |
-| dynamic-coaching-strategy    | Enable changing the coaching rate when updating strategy          |
-| max-coaching-rate            | Maximum allowed coaching rate                                     |
+| `headcount-mean`               | Mean for headcount distribution                                   |
+| `headcount-variance`           | Variance for headcount distribution                               |
+| `hiring-threshold-mean`        | Mean for hiring threshold distribution                            |
+| `hiring-threshold-variance`    | Variance for hiring threshold distribution                        |
+| `diminishing-returns-coaching` | Enable diminishing returns when coaching                          |
+| `coaching-skill-ceiling`       | Upper limit for skill level with diminished returns               |
+| `coaching-skill-increase`      | Skill level increase when coaching                                |
+| `working-skill-increase`       | Skill level increase when working                                 |
+| `skill-decay`                  | Enable skill decay when no coaching happens                       |
+| `skill-decay-threshold`        | Threshold after which decay starts                                |
+| `skill-decay-rate`             | Rate at which skill decays per tick                               |
+| `strategy-review-interval`     | Ticks between strategy reviews                                    |
+| `dynamic-hiring-strategy`      | Enable changing hiring threshold when updating strategy           |
+| `vacancy-rate-cutoff`          | Maximal allowed vacancy rate before hiring threshold is decreased |
+| `hiring-threshold-ceiling`     | Upper limit for hiring threshold                                  |
+| `dynamic-coaching-strategy`    | Enable changing the coaching rate when updating strategy          |
+| `max-coaching-rate`            | Maximum allowed coaching rate                                     |
+| `vacancy-rate-pressure`            | Enable coaching rate pressure from vacancy rate |
+| `leaving-threshold`   | Value of `propensity-to-leave` at which developer changes company |
+| `working-turnover-increase`    | Increase in turnover probability when working                     |
+| `coaching-turnover-decrease`   | Decrease in turnover probability when coaching                    |
 
 
 # Experiments
+
+## Data Format
+
+The dependent variables are reported for each tick.
+
+The format is
+
+`"[all run data]","[step]","dependent-variables","revenue-distribution","skill-distribution","unemployment-rate"`
+
+- All run data is empty
+- Tick number
+- List of "dependent-variables" (companies always sorted in the same order)
+  - Revenue this tick
+  - Cumulative revenue
+  - Skill level in company
+  - Hiring threshold
+  - Coaching rate
+  - Developers leaving this tick
+  - Current number of employees
+- List of "revenue-distribution"
+  - Revenue mean
+  - Revenue variance
+  - Revenue median
+- List of "skill-distribution"
+  - Skill level mean
+  - Skill level variance
+  - Skill level median
+- Unemployment rate (0..1)
+
+Example with three companies
+```
+,"48","[[138878 132572 125798] [138878 132572 125798] [1443 1922 1807] [2 3 2] [0 0 0] [30 30 30]]","[131219.32323232322 2.5762683775159788E8 133055]","[4424.652951096122 2340030.511432749 4430]","0.0016835016835016834"
+
+```
+
+## Sensitivity Analysis
+
+In order to find reasonable values for the fixed parameters of the model, a sensitivity analysis is done. It is done using the BehaviorSpace feature of NetLogo and is executed from the command line.
+
+See **REFERENCE JUPYTER NOTEBOOK OR PYTHON SCRIPT**
+
+## Comparison of Strategies
+
+Experiment ideas:
+- how often is a review done
+
+To answer the initial research question, the simulation data is analyzed from different viewpoints to show the dependence of the DVs from the company choices.
+
+
 
 
 

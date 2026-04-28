@@ -320,11 +320,11 @@ The format is
   - Current number of employees
 - List of "revenue-distribution"
   - Revenue mean
-  - Revenue variance
+  - Revenue std-dev
   - Revenue median
 - List of "skill-distribution"
   - Skill level mean
-  - Skill level variance
+  - Skill level std-dev
   - Skill level median
 - Unemployment rate (0..1)
 

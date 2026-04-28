@@ -183,7 +183,7 @@ to-report company-appeal [given-skill-level given-developer-history]
   foreach given-developer-history [ record -> 
     let departure-skill-level item 0 record
     let departure-tick item 1 record
-    let ratio abs ln (given-skill-level / departure-skill-level)  ;; Calculate log ratio
+    let ratio (ln (given-skill-level / departure-skill-level)) ^ 2  ;; Calculate squared-log ratio, highest appeal when no similar developers left lately
     let weight 1 / (ticks - departure-tick + 1)  ;; Weight by ticks
     set appeal appeal + (ratio * weight)  ;; Add weighted ratio to appeal
   ]
@@ -294,7 +294,7 @@ to-report revenue-distribution
   let companies patches with [self != patch 0 0]
   report ( list
     mean [revenue] of companies
-    variance [revenue] of companies
+    standard-deviation [revenue] of companies
     median [revenue] of companies
   )
 end
@@ -303,7 +303,7 @@ to-report skill-distribution
   let developers turtles with [patch-here != patch 0 0]
   report (list 
     mean [skill-level] of developers
-    variance [skill-level] of developers
+    standard-deviation [skill-level] of developers
     median [skill-level] of developers
   )
 end

@@ -517,7 +517,7 @@ Key outputs produced
 ### General setup for experiments
 - Each experiment is conducted with a **subset** of variables that are *changed* during the different runs of an experiment. Each experiment in the following chapters describes the variables that are changed with the specified *range*.
 
-- Every experiment is executed for a total of $5000$ steps which corresponds to a duration of $50$ years.
+- Every experiment is executed for a total of $8000$ steps which corresponds to a duration of $80$ years.
 
 ### Basic analysis on coaching rate and output
 - What is the ideal *coaching rate* for a company to adapt 

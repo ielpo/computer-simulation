@@ -1,0 +1,74 @@
+
+<experiments>
+  <experiment name="sensitivity-analysis" repetitions="1" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <setup>setup</setup>
+    <go>go</go>
+    <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
+    <metrics>
+      <metric>dependent-variables</metric>
+      <metric>revenue-distribution</metric>
+      <metric>skill-distribution</metric>
+      <metric>unemployment-rate</metric>
+    </metrics>
+    <constants>
+      <enumeratedValueSet variable="headcount-mean">
+        <value value="30"></value>
+        <value value="100"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="diminishing-returns-coaching">
+        <value value="true"></value>
+        <value value="false"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="coaching-skill-ceiling">
+        <value value="10000"></value>
+        <value value="20000"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="coaching-skill-increase">
+        <value value="20"></value>
+        <value value="50"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="working-skill-increase">
+        <value value="1"></value>
+        <value value="2"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="skill-decay">
+        <value value="true"></value>
+        <value value="false"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="skill-decay-threshold">
+        <value value="200"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="skill-decay-rate">
+        <value value="0.05"></value>
+        <value value="0.1"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="leaving-threshold">
+        <value value="25"></value>
+        <value value="60"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="working-turnover-increase">
+        <value value="0.15"></value>
+        <value value="0.3"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="coaching-turnover-decrease">
+        <value value="1"></value>
+        <value value="5"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="hiring-threshold-mean">
+        <value value="1000"></value>
+        <value value="5000"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="dynamic-hiring-strategy">
+        <value value="true"></value>
+        <value value="false"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="strategy-review-interval">
+        <value value="50"></value>
+      </enumeratedValueSet>
+      <enumeratedValueSet variable="vacancy-rate-pressure">
+        <value value="true"></value>
+        <value value="false"></value>
+      </enumeratedValueSet>
+    </constants>
+  </experiment>
+</experiments>

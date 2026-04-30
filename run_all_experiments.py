@@ -25,6 +25,7 @@ def get_experiment_names(model_path: Path) -> list[str]:
 
 def run_experiment(console_cmd: str, experiment: str, total: int, index: int) -> int:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    spreadsheet_path = OUTPUT_DIR / f"{experiment}-spreadhseet-{timestamp}.csv"
     table_path = OUTPUT_DIR / f"{experiment}-table-{timestamp}.csv"
 
     command = [
@@ -32,6 +33,7 @@ def run_experiment(console_cmd: str, experiment: str, total: int, index: int) ->
         "--headless",
         "--model", str(MODEL_PATH),
         "--experiment", experiment,
+        "--spreadsheet", str(spreadsheet_path),
         "--table", str(table_path),
     ]
 

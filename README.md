@@ -531,7 +531,7 @@ Key outputs produced
 | Variable                  | From | To  | Step |
 | ------------------------- | ---- | --- | ---- |
 | `coaching-skill-increase` | 0    | 100 | 10   |
-| `working-skill-increase`  | 0    | 10  | 10   |
+| `working-skill-increase`  | 0    | 10  | 1    |
 | `max-coaching-rate`       | 0    | 20  | 5    |
 
 #### Changing variables experiment 2
@@ -542,11 +542,10 @@ Key outputs produced
 | `leaving-threshold`          | 10   | 100 | 10   |
 
 #### Changing variables experiment 3
-| Variable                | From | To    | Step |
-| ----------------------- | ---- | ----- | ---- |
-| `skill-decay-threshold` | 100  | 500   | 100  |
-| `skill-decay-rate`      | 0.0  | 0.2   | 0.05 |
-| `skill-decay`           | true | false | -    |
+| Variable                | From | To  | Step |
+| ----------------------- | ---- | --- | ---- |
+| `skill-decay-threshold` | 100  | 500 | 100  |
+| `skill-decay-rate`      | 0.0  | 0.2 | 0.05 |
 
 ### Strategy and strategy reviews
 - How are `revenue` and `retention` affected from adaptive hiring and coaching strategies?
@@ -560,8 +559,8 @@ Key outputs produced
 | Variable                     | From | To  | Step |
 | ---------------------------- | ---- | --- | ---- |
 | `strategy-review-interval`   | 50   | 500 | 50   |
-| `working-turnover-increase`  | 0.0  | 0.5 | 0.1  |
-| `coaching-turnover-decrease` | 0.0  | 5.0 | 1    |
+| `working-turnover-increase`  | 0.1  | 0.5 | 0.1  |
+| `coaching-turnover-decrease` | 1    | 5   | 1    |
 | `leaving-threshold`          | 10   | 100 | 25   |
 
 #### Changing variables experiment 2

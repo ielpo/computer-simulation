@@ -347,7 +347,7 @@ to profile
 end
 ]]></code>
   <widgets>
-    <view x="170" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="0" height="204" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="204" tickCounterLabel="ticks" maxPycor="3" updateMode="1" maxPxcor="3" minPxcor="0"></view>
+    <view x="170" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="0" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="9" updateMode="1" maxPxcor="9" minPxcor="0"></view>
     <monitor x="1030" precision="1" y="10" height="60" fontSize="11" width="120" display="Mean Skill Level">mean [skill-level] of turtles</monitor>
     <monitor x="910" precision="1" y="10" height="60" fontSize="11" width="110" display="Mean Age">mean
       [age] of turtles</monitor>

@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""Run all BehaviorSpace experiments in simulation.nlogox using NetLogo_Console headless mode."""
-from __future__ import annotations
-
-import os
-import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -12,33 +6,34 @@ from pathlib import Path
 
 MODEL_PATH = Path("simulation.nlogox")
 OUTPUT_DIR = Path("output")
-NETLOGO_CONSOLE = "/root/netlogo/NetLogo_Console"
 
+## Adapt these values for your setup
+NETLOGO_CONSOLE = "/opt/netlogo/NetLogo-7.0.3/NetLogo_Console"
+THREAD_COUNT = 12
 
 def get_experiment_names(model_path: Path) -> list[str]:
     root = ET.parse(model_path).getroot()
     experiments = root.find("experiments")
     if experiments is None:
         return []
-    return [exp.get("name") for exp in experiments.findall("experiment") if exp.get("name")]
+    return [exp.get("name") for exp in experiments.findall("experiment") if exp.get("name") is not None]
 
 
 def run_experiment(console_cmd: str, experiment: str, total: int, index: int) -> int:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     spreadsheet_path = OUTPUT_DIR / f"{experiment}-spreadhseet-{timestamp}.csv"
-    table_path = OUTPUT_DIR / f"{experiment}-table-{timestamp}.csv"
 
     command = [
         console_cmd,
         "--headless",
+        "--threads", str(THREAD_COUNT),
         "--model", str(MODEL_PATH),
         "--experiment", experiment,
         "--spreadsheet", str(spreadsheet_path),
-        "--table", str(table_path),
     ]
 
     print(f"\n[{index}/{total}] Running experiment: {experiment}")
-    print(f"  Table output: {table_path}")
+    print(f"  Spreadsheet output: {spreadsheet_path}")
     print(f"  Command: {' '.join(command)}\n")
 
     with subprocess.Popen(
@@ -77,16 +72,38 @@ def main() -> int:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     total = len(experiments)
-    print(f"Found {total} experiment(s): {', '.join(experiments)}")
+    print(f"Found {total} experiment(s):")
+    for idx, experiment in enumerate(experiments, start=1):
+        print(f"  {idx}. {experiment}")
+
+    # Prompt user to select experiments by index
+    print("\nEnter the indices of the experiments to run, separated by commas.")
+    print("Leave blank to run all experiments.")
+    user_input = input("Selected experiments: ").strip()
+
+    if user_input:
+        try:
+            selected_indices = [int(idx.strip()) for idx in user_input.split(",")]
+            selected_experiments = [experiments[idx - 1] for idx in selected_indices if 1 <= idx <= total]
+            if not selected_experiments:
+                print("No valid experiments selected.", file=sys.stderr)
+                return 1
+        except ValueError:
+            print("Invalid input. Please enter valid indices.", file=sys.stderr)
+            return 1
+    else:
+        selected_experiments = experiments
+
+    print(f"\nRunning {len(selected_experiments)} experiment(s): {', '.join(selected_experiments)}")
 
     failed: list[str] = []
-    for i, experiment in enumerate(experiments, start=1):
-        rc = run_experiment(NETLOGO_CONSOLE, experiment, total, i)
+    for i, experiment in enumerate(selected_experiments, start=1):
+        rc = run_experiment(NETLOGO_CONSOLE, experiment, len(selected_experiments), i)
         if rc != 0:
             failed.append(experiment)
 
     print(f"\n{'='*60}")
-    print(f"Completed {total - len(failed)}/{total} experiments successfully.")
+    print(f"Completed {len(selected_experiments) - len(failed)}/{len(selected_experiments)} experiments successfully.")
     if failed:
         print(f"Failed experiments: {', '.join(failed)}")
         return 1

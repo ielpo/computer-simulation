@@ -1375,7 +1375,7 @@ Developed by
         <metric>unemployment-rate</metric>
       </metrics>
     </experiment>
-    <experiment name="sensitivity-company-count" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-company-count" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1411,7 +1411,7 @@ Developed by
         </subExperiment>
       </subExperiments>
     </experiment>
-    <experiment name="sensitivity-headcount" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-headcount" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1427,7 +1427,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-coaching-skill-ceiling" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-coaching-skill-ceiling" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1443,7 +1443,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-coaching-skill-increase" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-coaching-skill-increase" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1459,7 +1459,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-working-skill-increase" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-working-skill-increase" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1475,7 +1475,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-skill-decay-rate" repetitions="5" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-skill-decay-rate" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1485,10 +1485,10 @@ Developed by
         <metric>unemployment-rate</metric>
       </metrics>
       <constants>
-        <steppedValueSet variable="skill-decay-rate" first="0.05" step="0.05" last="0.4"></steppedValueSet>
+        <steppedValueSet variable="skill-decay-rate" first="0.1" step="0.1" last="0.5"></steppedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-leaving-threshold" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-leaving-threshold" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1504,7 +1504,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-working-turnover-increase" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-working-turnover-increase" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1520,7 +1520,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-coaching-turnover-decrease" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-coaching-turnover-decrease" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1536,7 +1536,7 @@ Developed by
         </enumeratedValueSet>
       </constants>
     </experiment>
-    <experiment name="sensitivity-hiring-threshold-mean" repetitions="20" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="sensitivity-hiring-threshold-mean" repetitions="10" sequentialRunOrder="true" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>

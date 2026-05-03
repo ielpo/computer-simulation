@@ -33,11 +33,8 @@ while [[ $# -gt 0 ]]; do
 done
 [[ ${#EXPERIMENTS[@]} -eq 0 ]] && EXPERIMENTS=("${ALL_EXPERIMENTS[@]}")
 
-# ── Set JAVA_HOME to NetLogo's bundled JRE (Java 17) ─────────────────────────
-# The rnd extension requires Java 17 (class version 61.0). The system Java is
-# typically Java 11, so we always override with the bundled runtime.
-export JAVA_HOME="$NETLOGO_INSTALL_DIR/lib/runtime"
-echo "JAVA_HOME: $JAVA_HOME"
+# ── Verify Java is reachable ──────────────────────────────────────────────────
+echo "java: $("$NETLOGO_INSTALL_DIR/lib/runtime/bin/java" -version 2>&1 | head -1)"
 
 # ── Preflight checks ──────────────────────────────────────────────────────────
 if [[ ! -f "$NETLOGO_INSTALL_DIR/netlogo-headless.sh" ]]; then

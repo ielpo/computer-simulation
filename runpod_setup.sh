@@ -11,6 +11,7 @@ set -euo pipefail
 
 NETLOGO_INSTALL_DIR="/opt/netlogo"
 NETLOGO_TGZ="${NETLOGO_TGZ:-NetLogo-7.0.3-64.tgz}"
+JAVA17="/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,53 +26,54 @@ if [[ ! -f "$NETLOGO_TGZ" ]]; then
   exit 1
 fi
 
-# ── Step 1: Java ──────────────────────────────────────────────────────────────
-echo "=== Step 1/5: Installing Java ==="
+# ── Step 1: System packages ───────────────────────────────────────────────────
+# Java 17 required: rnd extension compiled to class file version 61.0.
+echo "=== Step 1/4: Installing system packages ==="
 apt-get update -qq
-apt-get install -y --no-install-recommends default-jdk-headless tar git python3 python3-pip > /dev/null
-java -version
+apt-get install -y --no-install-recommends \
+  openjdk-17-jdk-headless tar git python3 python3-pip > /dev/null
+echo "Java: $(java -version 2>&1 | head -1)"
 
-# ── Step 2: JAVA_HOME ─────────────────────────────────────────────────────────
+# Remove any stale JAVA_HOME from previous runs — we rely on the symlink instead.
+sed -i '/JAVA_HOME/d' ~/.bashrc
+unset JAVA_HOME || true
+
+# ── Step 2: NetLogo ───────────────────────────────────────────────────────────
 echo ""
-echo "=== Step 2/5: Setting JAVA_HOME ==="
-# Use the JRE bundled with NetLogo (Java 17) rather than the system Java (Java 11).
-# The rnd extension and others require class file version 61.0 (Java 17).
-export JAVA_HOME="$NETLOGO_INSTALL_DIR/lib/runtime"
-echo "JAVA_HOME=$JAVA_HOME"
-
-# Persist across sessions
-grep -q "JAVA_HOME" ~/.bashrc \
-  && sed -i "s|export JAVA_HOME=.*|export JAVA_HOME=$JAVA_HOME|" ~/.bashrc \
-  || echo "export JAVA_HOME=$JAVA_HOME" >> ~/.bashrc
-
-# ── Step 3: NetLogo ───────────────────────────────────────────────────────────
-echo ""
-echo "=== Step 3/5: Installing NetLogo from $NETLOGO_TGZ ==="
+echo "=== Step 2/4: Installing NetLogo ==="
 if [[ -f "$NETLOGO_INSTALL_DIR/netlogo-headless.sh" ]]; then
-  echo "Already installed at $NETLOGO_INSTALL_DIR — skipping."
+  echo "Already installed at $NETLOGO_INSTALL_DIR — skipping extraction."
 else
   mkdir -p "$NETLOGO_INSTALL_DIR"
   tar -xzf "$NETLOGO_TGZ" -C "$NETLOGO_INSTALL_DIR" --strip-components=1
-  echo "Installed at $NETLOGO_INSTALL_DIR"
+  echo "Extracted to $NETLOGO_INSTALL_DIR"
 fi
 
-# Patch a bug in NetLogo 7.0.3: netlogo-headless.sh has a literal [] in
-# JVM_OPTS which Java treats as the main class name, causing ClassNotFoundException.
+# Patch 1: NetLogo 7.0.3 has a literal [] in JVM_OPTS which Java treats as
+# the main class name, causing ClassNotFoundException.
 if grep -q '\[\]' "$NETLOGO_INSTALL_DIR/netlogo-headless.sh"; then
   sed -i 's/ \[\])/)/g' "$NETLOGO_INSTALL_DIR/netlogo-headless.sh"
-  echo "Patched [] bug in netlogo-headless.sh"
+  echo "Patched: removed stray [] from JVM_OPTS"
 fi
-grep -q "NETLOGO_HOME" ~/.bashrc || echo "export NETLOGO_HOME=$NETLOGO_INSTALL_DIR" >> ~/.bashrc
 
-# ── Step 4: Python ────────────────────────────────────────────────────────────
+# Patch 2: lib/runtime ships without a bin/ directory, but netlogo-headless.sh
+# looks for $JAVA_HOME/bin/java (JAVA_HOME defaults to lib/runtime).
+# Symlink Java 17 into the expected location. Done AFTER extraction so the
+# tarball cannot overwrite it.
+mkdir -p "$NETLOGO_INSTALL_DIR/lib/runtime/bin"
+ln -sf "$JAVA17" "$NETLOGO_INSTALL_DIR/lib/runtime/bin/java"
+echo "Linked Java 17 → $NETLOGO_INSTALL_DIR/lib/runtime/bin/java"
+"$NETLOGO_INSTALL_DIR/lib/runtime/bin/java" -version 2>&1 | head -1
+
+# ── Step 3: Python ────────────────────────────────────────────────────────────
 echo ""
-echo "=== Step 4/5: Installing Python dependencies ==="
+echo "=== Step 3/4: Installing Python dependencies ==="
 pip install --quiet uv
 uv sync
 
-# ── Step 5: Verify ────────────────────────────────────────────────────────────
+# ── Step 4: Verify ────────────────────────────────────────────────────────────
 echo ""
-echo "=== Step 5/5: Verifying setup ==="
+echo "=== Step 4/4: Verifying setup ==="
 python3 run_behaviorspace.py \
   --netlogo-home "$NETLOGO_INSTALL_DIR" \
   --list-experiments

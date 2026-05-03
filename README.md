@@ -83,8 +83,7 @@ Initialization and inputs
 Outputs and indicators
 
 - Company: per tick revenue, cumulative revenue, total skill, hiring threshold, coaching rate, turnover rate.
-- Developer: skill distribution, age distribution, turnover propensity.
-- Market-level: revenue distribution and mean, turnover rate.
+- Market-level: skill distribution and mean, turnover rate.
 
 Assumptions and limitations
 
@@ -335,6 +334,75 @@ Example with three companies
 ```
 
 ## Sensitivity Analysis
+
+This document describes the sensitivity analysis plan for the agent-based simulation model of software developer training and turnover in competing software companies. The structure follows Haki et al. (2020, Table B2) and Haki et al. (2024, Table A1).
+
+The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0 0 which serves as the unemployment pool) and a variable number of **developer agents** (turtles). Each tick corresponds to one working day; `ticks-per-year = 100`.
+
+### Developers
+
+| Model Parameter | Description | Baseline Value | Tested Values | Justification |
+|---|---|---|---|---|
+| Number of companies | The number of competing companies is fixed by the grid size (10×10 minus the unemployment patch at 0,0). | **TODO** | 15 (4×4), 99 (10×10), 195 (14×14) | Grid size determines the competitive landscape. Smaller grids reduce inter-company competition for talent; very large grids may dilute market-level effects. Outcomes such as mean skill and revenue should be evaluated relative to grid size to confirm robustness. |
+| `headcount-mean` | Target number of developers per company, drawn from a normal distribution at initialization. | **TODO** | 30, 100 | A minimum headcount is required for coaching dynamics to emerge. At very low headcounts, individual departures cause disproportionate disruption. At very high headcounts, individual skill differences are averaged out. Baseline of 30 represents a mid-sized software team. |
+| `headcount-variance` | Standard deviation of the headcount normal distribution across companies. | 10% | 10%  | A variance of 0 initializes all companies identically, isolating other effects. Increasing variance introduces heterogeneity in company size, reflecting real-world variation in team sizes. High variance may cause model degeneracy if some companies initialize with zero or negative headcount. |
+
+### Coaching and Skill Dynamics
+
+| Model Parameter | Description | Baseline Value | Tested Values | Justification |
+|---|---|---|---|---|
+| `diminishing-returns-coaching` (switch) | When ON, coaching skill gain follows exponential decay toward `coaching-skill-ceiling`: `Δskill = coaching-skill-increase × (1 − skill / ceiling)`. When OFF, skill increases linearly by `coaching-skill-increase` per coaching tick. | ON | ON | This switch determines whether coaching becomes less effective as developers approach the skill ceiling. With diminishing returns ON, companies face a strategic choice between investing in high-skill vs. low-skill developers. Comparing ON vs. OFF isolates this non-linearity. |
+| `coaching-skill-ceiling` | Maximum skill level a developer can reach through coaching (skill points). Also acts as the cap for working skill increase. | **TODO** | 10'000, 20'000 | The ceiling defines the upper bound of the skill distribution. A low ceiling compresses the skill range, reducing the incentive to coach. A high ceiling allows large skill differentials, amplifying the tension between coaching investment and turnover risk. Must remain above realistic initial skill values (~7,200 for a 64-year-old developer). |
+| `coaching-skill-increase` | Skill points added per coaching tick (before diminishing-returns adjustment if enabled). | **TODO** | 20, 50 | Controls the speed of human capital accumulation. Low values make coaching investment slow and potentially unattractive given turnover risk. High values make even short coaching sessions highly impactful, potentially destabilizing the market if developers quickly outgrow their company's hiring threshold. |
+| `working-skill-increase` | Skill points added per working tick (capped at `coaching-skill-ceiling`). | **TODO** | 1, 2 | Represents on-the-job learning during productive work. A value of 0 means only coaching builds skill. A high value makes working almost as skill-building as coaching, reducing the incentive to invest in formal coaching sessions. |
+| `skill-decay` (switch) | When ON, developer skill decays annually if the developer has not been coached within `skill-decay-threshold` ticks. | ON | ON | Skill decay motivates recurring coaching investment. Without decay, a single investment in coaching has permanent returns; with decay, coaching becomes an ongoing cost. This switch isolates whether the decay mechanism is necessary for observed long-run dynamics. |
+| `skill-decay-threshold` | Number of ticks without coaching before skill decay begins. At `ticks-per-year = 100`, a threshold of 300 ticks equals 3 years. | 200 | 200 (2 yr) | A short threshold forces companies to coach frequently or risk skill erosion. A long threshold makes decay a background effect. The boundary at 100 ticks (1 year) tests whether annual coaching is required; at 800 ticks, decay becomes nearly irrelevant over a typical simulation run. |
+| `skill-decay-rate` | Annual rate at which skill decays (applied per-tick as `rate / ticks-per-year`). A rate of 0.1 means 10% annual skill loss. | **TODO** | 0.05, 0.10 | Controls the severity of skill obsolescence. Low rates make decay a minor background effect; high rates force companies into aggressive coaching schedules or accept significant skill erosion. At 0.20, a developer losing no coaching for 5 years would retain only ~33% of their peak skill. |
+
+### Turnover Behavior
+
+| Model Parameter | Description | Baseline Value | Tested Values | Justification |
+|---|---|---|---|---|
+| `leaving-threshold` | Accumulated `propensity-to-leave` score at which a developer departs. Lower values make developers more sensitive to accumulated dissatisfaction. | **TODO** | 25, 60 | This threshold acts as the friction in the labor market. A low threshold produces high turnover even from moderate dissatisfaction. A high threshold means only severely dissatisfied developers leave, dampening turnover dynamics. Sensitivity tests confirm whether observed market equilibria are robust to this behavioral parameter. |
+| `working-turnover-increase` | Increment added to `propensity-to-leave` each working tick. Represents accumulating dissatisfaction from stagnation during non-coaching periods. | **TODO** | 0.15, 0.30 | Controls the rate at which developers become dissatisfied during productive (non-coaching) periods. A value of 0 means working does not increase turnover propensity, eliminating the core tension of the model. A value of 0.50 means a developer reaches the baseline threshold of 25 after only 50 consecutive working ticks (~0.5 years). |
+| `coaching-turnover-decrease` | Decrement subtracted from `propensity-to-leave` per coaching tick. Represents the retention benefit of investing in developers. | **TODO** | 1.00, 5.00 | Controls the effectiveness of coaching as a retention tool. At 0, coaching has no retention effect (only skill effect). At high values, a single coaching day can neutralize several working days of accumulated dissatisfaction, making coaching extremely powerful for retention. The ratio of `working-turnover-increase` to `coaching-turnover-decrease` determines the coaching-to-working balance needed to retain developers. |
+
+### Company Strategy
+
+| Model Parameter | Description | Baseline Value | Tested Values | Justification |
+|---|---|---|---|---|
+| `hiring-threshold-mean` | Mean minimum skill level (skill points) a candidate must exceed to be hired, drawn from a normal distribution at initialization. | **TODO** | 1'000, 5'000 | The hiring threshold determines initial selectivity in the labor market. A threshold of 1,700 sp corresponds roughly to a developer with 2–3 years of experience under the initial skill formula. Very low thresholds lead to rapid fill of vacancies at the cost of low initial team quality; very high thresholds risk persistent vacancies. |
+| `hiring-threshold-variance` | Standard deviation of the hiring threshold normal distribution across companies at initialization. | 300 | 300 | Zero variance initializes all companies with identical thresholds; nonzero variance creates market niches (e.g., companies competing for different talent segments). High variance may lead some companies to initialize with thresholds exceeding the available labor pool, creating persistent vacancies from the start. |
+| `hiring-threshold-ceiling` | Hard upper bound on hiring threshold when `dynamic-hiring-strategy` is ON. Prevents companies from raising thresholds arbitrarily high. | 15'000 sp | 15'000 sp | This ceiling constrains dynamic strategy adaptation. A low ceiling means all companies converge toward the same maximum selectivity. A ceiling close to `coaching-skill-ceiling` allows companies to hire only the most skilled developers available in the market, potentially leaving many vacancies unfilled. |
+| `dynamic-hiring-strategy` (switch) | When ON, companies periodically adjust their `hiring-threshold` based on their current vacancy rate: lower the threshold if vacancy rate exceeds `vacancy-rate-cutoff`, raise it otherwise. | ON | ON | This switch enables adaptive company behavior. With OFF, hiring thresholds remain at their initialized values throughout the simulation. Comparing ON vs. OFF reveals whether strategic adaptation improves company performance and market stability, or whether it leads to emergent arms races or race-to-the-bottom dynamics. |
+| `strategy-review-interval` | Number of ticks between strategy reviews (when `dynamic-hiring-strategy` is ON). | 50 ticks (0.5 years) | 50 | Controls how frequently companies can adapt their hiring strategy. Shorter intervals allow rapid adaptation but may cause oscillatory behavior. Longer intervals represent more inertial organizations. |
+| `vacancy-rate-cutoff` | Vacancy rate threshold that triggers a hiring threshold reduction in the dynamic strategy. A rate above the cutoff means too many vacancies; the company lowers its bar to hire faster. | 0.05 (5%) | 0.05| This parameter sets the company's tolerance for understaffing. At 0.01, even a single vacancy in a 100-person team triggers a threshold reduction; at 0.40, companies accept 40% vacancy rates before relaxing hiring standards. Low cutoffs create aggressive downward pressure on hiring thresholds; high cutoffs let vacancies persist longer. |
+| `max-coaching-rate` | Upper bound on initial coaching-rate assignment. Companies are initialized with a randomly chosen integer coaching rate in `[0, max-coaching-rate − 1]`, representing the percentage of ticks spent coaching. | 15 (uniform over 0–14%) | 15 | Sets the range of coaching intensity across companies at initialization. A lower maximum compresses companies toward low coaching rates, limiting heterogeneity in investment strategy. A value of 20 allows companies to initialize anywhere from 0% to 19% coaching rate, reflecting a broad range of investment philosophies. |
+| `vacancy-rate-pressure` (switch) | When ON, companies that are understaffed (vacancy rate > 0) reduce their effective coaching rate proportionally to their vacancy rate: `effective-coaching-rate = coaching-rate × (1 − vacancy-rate)`. When OFF, coaching rate is applied regardless of staffing levels. | OFF | OFF | This switch captures the operational reality that understaffed teams cannot afford to take developers off productive work for coaching. With OFF, coaching rates are not affected by vacancies, testing whether observed dynamics depend on this constraint. Comparing ON vs. OFF reveals the interaction between staffing and training investment. |
+
+
+### Simulation Run
+
+| Model Parameter | Description | Baseline Value | Tested Values | Justification |
+|---|---|---|---|---|
+| Time steps | Total number of ticks per simulation run. At `ticks-per-year = 100`, one run of 1,000 ticks corresponds to 10 simulated years. | 8'000 ticks (80 years) | 8'000 | The simulation must run long enough for the system to pass any transient initialization phase and reach a stable or recurring dynamic. Below ~200 ticks, equilibria may not yet be observable. The first ~100 ticks should be discarded as a warm-up period. |
+
+---
+
+### Notes on Interaction Effects
+
+Based on the model structure, the following parameter pairs are expected to produce interaction effects and should be jointly varied in experiments:
+
+1. **`working-turnover-increase` × `coaching-turnover-decrease`** — These two parameters jointly determine the coaching rate a company must sustain to retain developers. Their ratio is the primary driver of equilibrium coaching intensity.
+
+2. **`coaching-skill-increase` × `coaching-skill-ceiling` × `diminishing-returns-coaching`** — Together these define the shape of the skill accumulation curve and the marginal return on coaching investment at different skill levels.
+
+3. **`hiring-threshold-mean` × `leaving-threshold`** — Hiring selectivity determines the skill composition of teams; turnover sensitivity determines how quickly that composition changes. Their interaction drives whether companies converge on stable high-skill teams or face chronic churn.
+
+4. **`skill-decay-rate` × `skill-decay-threshold` × `coaching-skill-increase`** — Decay parameters interact with coaching effectiveness to determine whether skill levels are sustainable without continuous coaching investment.
+
+5. **`dynamic-hiring-strategy` × `vacancy-rate-cutoff` × `vacancy-rate-pressure`** — These three parameters together control the feedback loop between staffing levels, strategy adaptation, and coaching availability.
+
 
 In order to find reasonable values for the fixed parameters of the model, a sensitivity analysis is done. It is done using the BehaviorSpace feature of NetLogo and is executed from the command line.
 

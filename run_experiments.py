@@ -11,12 +11,17 @@ OUTPUT_DIR = Path("output")
 NETLOGO_CONSOLE = "/opt/netlogo/NetLogo-7.0.3/NetLogo_Console"
 THREAD_COUNT = 12
 
+
 def get_experiment_names(model_path: Path) -> list[str]:
     root = ET.parse(model_path).getroot()
     experiments = root.find("experiments")
     if experiments is None:
         return []
-    return [exp.get("name") for exp in experiments.findall("experiment") if exp.get("name") is not None]
+    return [
+        exp.get("name")
+        for exp in experiments.findall("experiment")
+        if exp.get("name") is not None
+    ]
 
 
 def run_experiment(console_cmd: str, experiment: str, total: int, index: int) -> int:
@@ -26,10 +31,14 @@ def run_experiment(console_cmd: str, experiment: str, total: int, index: int) ->
     command = [
         console_cmd,
         "--headless",
-        "--threads", str(THREAD_COUNT),
-        "--model", str(MODEL_PATH),
-        "--experiment", experiment,
-        "--spreadsheet", str(spreadsheet_path),
+        "--threads",
+        str(THREAD_COUNT),
+        "--model",
+        str(MODEL_PATH),
+        "--experiment",
+        experiment,
+        "--spreadsheet",
+        str(spreadsheet_path),
     ]
 
     print(f"\n[{index}/{total}] Running experiment: {experiment}")
@@ -49,7 +58,9 @@ def run_experiment(console_cmd: str, experiment: str, total: int, index: int) ->
     if proc.returncode == 0:
         print(f"\n  [OK] Experiment '{experiment}' completed.")
     else:
-        print(f"\n  [FAILED] Experiment '{experiment}' exited with code {proc.returncode}.")
+        print(
+            f"\n  [FAILED] Experiment '{experiment}' exited with code {proc.returncode}."
+        )
 
     return proc.returncode
 
@@ -84,7 +95,9 @@ def main() -> int:
     if user_input:
         try:
             selected_indices = [int(idx.strip()) for idx in user_input.split(",")]
-            selected_experiments = [experiments[idx - 1] for idx in selected_indices if 1 <= idx <= total]
+            selected_experiments = [
+                experiments[idx - 1] for idx in selected_indices if 1 <= idx <= total
+            ]
             if not selected_experiments:
                 print("No valid experiments selected.", file=sys.stderr)
                 return 1
@@ -94,7 +107,9 @@ def main() -> int:
     else:
         selected_experiments = experiments
 
-    print(f"\nRunning {len(selected_experiments)} experiment(s): {', '.join(selected_experiments)}")
+    print(
+        f"\nRunning {len(selected_experiments)} experiment(s): {', '.join(selected_experiments)}"
+    )
 
     failed: list[str] = []
     for i, experiment in enumerate(selected_experiments, start=1):
@@ -102,8 +117,10 @@ def main() -> int:
         if rc != 0:
             failed.append(experiment)
 
-    print(f"\n{'='*60}")
-    print(f"Completed {len(selected_experiments) - len(failed)}/{len(selected_experiments)} experiments successfully.")
+    print(f"\n{'=' * 60}")
+    print(
+        f"Completed {len(selected_experiments) - len(failed)}/{len(selected_experiments)} experiments successfully."
+    )
     if failed:
         print(f"Failed experiments: {', '.join(failed)}")
         return 1

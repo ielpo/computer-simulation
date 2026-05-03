@@ -1486,7 +1486,7 @@ set-histogram-num-bars 30</update>
                  working-skill-increase (0→10 step 1),
                  max-coaching-rate (0→20 step 5)
          Run count: 11 × 11 × 5 × 3 reps = 1,815 runs -->
-    <experiment name="coaching-output-exp1" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="coaching-output-exp1" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1497,7 +1497,7 @@ set-histogram-num-bars 30</update>
         <metric>unemployment-rate</metric>
       </metrics>
       <constants>
-        <steppedValueSet variable="coaching-skill-increase" first="0" step="10" last="100"></steppedValueSet>
+        <steppedValueSet variable="coaching-skill-increase" first="0" step="20" last="100"></steppedValueSet>
         <steppedValueSet variable="working-skill-increase" first="0" step="2" last="10"></steppedValueSet>
         <steppedValueSet variable="max-coaching-rate" first="0" step="5" last="20"></steppedValueSet>
         <enumeratedValueSet variable="skill-decay">
@@ -1562,7 +1562,7 @@ set-histogram-num-bars 30</update>
                  coaching-turnover-decrease (0→5 step 1),
                  leaving-threshold (10→100 step 10)
          Run count: 6 × 6 × 10 × 3 reps = 1,080 runs -->
-    <experiment name="coaching-output-exp2" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="coaching-output-exp2" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1575,7 +1575,7 @@ set-histogram-num-bars 30</update>
       <constants>
         <steppedValueSet variable="working-turnover-increase" first="0" step="0.1" last="0.5"></steppedValueSet>
         <steppedValueSet variable="coaching-turnover-decrease" first="0" step="1" last="5"></steppedValueSet>
-        <steppedValueSet variable="leaving-threshold" first="10" step="10" last="100"></steppedValueSet>
+        <steppedValueSet variable="leaving-threshold" first="10" step="50" last="100"></steppedValueSet>
         <enumeratedValueSet variable="skill-decay">
           <value value="true"></value>
         </enumeratedValueSet>
@@ -1637,7 +1637,7 @@ set-histogram-num-bars 30</update>
          Sweeps: skill-decay-threshold (100→500 step 100),
                  skill-decay-rate (0.0→0.2 step 0.05)
          Run count: 5 × 5 × 3 reps = 75 runs -->
-    <experiment name="coaching-output-exp3" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="coaching-output-exp3" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1720,7 +1720,7 @@ set-histogram-num-bars 30</update>
                  coaching-turnover-decrease (1→5 step 1),
                  leaving-threshold (10→100 step 25)
          Run count: 10 × 5 × 5 × 4 × 3 reps = 3,000 runs -->
-    <experiment name="strategy-exp1" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="strategy-exp1" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1795,7 +1795,7 @@ set-histogram-num-bars 30</update>
                  hiring-threshold-variance (0→500 step 100),
                  vacancy-rate-cutoff (0.0→1.0 step 0.2)
          Run count: 10 × 5 × 6 × 6 × 3 reps = 5,400 runs -->
-    <experiment name="strategy-exp2" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="strategy-exp2" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>
@@ -1808,7 +1808,7 @@ set-histogram-num-bars 30</update>
       <constants>
         <steppedValueSet variable="strategy-review-interval" first="50" step="100" last="500"></steppedValueSet>
         <steppedValueSet variable="headcount-variance" first="0" step="100" last="200"></steppedValueSet>
-        <steppedValueSet variable="hiring-threshold-variance" first="0" step="100" last="500"></steppedValueSet>
+        <steppedValueSet variable="hiring-threshold-variance" first="0" step="200" last="500"></steppedValueSet>
         <steppedValueSet variable="vacancy-rate-cutoff" first="0" step="0.2" last="1"></steppedValueSet>
         <enumeratedValueSet variable="skill-decay">
           <value value="true"></value>
@@ -1869,7 +1869,7 @@ set-histogram-num-bars 30</update>
                  coaching-skill-ceiling (2000→20000 step 2000),
                  diminishing-returns-coaching (true / false)
          Run count: 10 × 10 × 2 × 3 reps = 600 runs -->
-    <experiment name="strategy-exp3" repetitions="3" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
+    <experiment name="strategy-exp3" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
       <runMetricsCondition>(ticks mod 10) = 0</runMetricsCondition>

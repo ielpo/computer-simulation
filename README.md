@@ -301,41 +301,46 @@ Function do-work:
 
 ## Data Format
 
-The dependent variables are reported for each tick.
+BehaviorSpace exports one row every tick. Each row has the following columns:
 
-The format is
+`"[all run data]","[step]","dependent-variables","skill-distribution","unemployment-rate"`
 
-`"[all run data]","[step]","dependent-variables","revenue-distribution","skill-distribution","unemployment-rate"`
+- **All run data**: empty (BehaviorSpace placeholder)
+- **Step**: tick number
+- **`dependent-variables`**: list of 4 sub-lists, one value per company (companies sorted by patch ID), produced by the `dependent-variables` reporter:
+  - Index 0: Cumulative revenue
+  - Index 1: Coaching rate (integer, ticks spent coaching out of `max-coaching-rate` options)
+  - Index 2: Vacancies (`headcount`, current employee count)
+  - Index 3: Mean propensity-to-leave of employees
+- **`skill-distribution`**: list produced by the `skill-distribution` reporter:
+  - Index 0: Mean skill level across all employed developers
+  - Index 1: Standard deviation of skill level
+  - Index 2: Median skill level
+- **`unemployment-rate`**: fraction of all agents currently unemployed (0–1)
 
-- All run data is empty
-- Tick number
-- List of "dependent-variables" (companies always sorted in the same order)
-  - Revenue this tick
-  - Cumulative revenue
-  - Skill level in company
-  - Hiring threshold
-  - Coaching rate
-  - Developers leaving this tick
-  - Current number of employees
-- List of "revenue-distribution"
-  - Revenue mean
-  - Revenue std-dev
-  - Revenue median
-- List of "skill-distribution"
-  - Skill level mean
-  - Skill level std-dev
-  - Skill level median
-- Unemployment rate (0..1)
-
-Example with three companies
+Example with three companies at tick 48:
 ```
-,"48","[[138878 132572 125798] [138878 132572 125798] [1443 1922 1807] [2 3 2] [0 0 0] [30 30 30]]","[131219.32323232322 2.5762683775159788E8 133055]","[4424.652951096122 2340030.511432749 4430]","0.0016835016835016834"
-
+,"48","[[138878 132572 125798] [5 3 7] [2 0 5] [12.3 8.5 15.1]]","[4424.652951096122 2340030.511432749 4430]","0.0016835016835016834"
 ```
 
 ## Sensitivity Analysis
 
-This document describes the sensitivity analysis plan for the agent-based simulation model of software developer training and turnover in competing software companies. The structure follows Haki et al. (2020, Table B2) and Haki et al. (2024, Table A1).
+All sensitivity experiments use: `repetitions=10`, `timeLimit=8000 ticks`, metrics collected every tick.
+
+Reporters collected per run: `dependent-variables`, `skill-distribution`, `unemployment-rate`.
+
+| Experiment name | IV | Tested values | Repetitions |
+|---|---|---|---|
+| `sensitivity-company-count` | `max-pxcor` / `max-pycor` | (3,3)=15 companies; (9,9)=99 companies; (13,13)=195 companies | 10 |
+| `sensitivity-headcount` | `headcount-mean` | 30, 100 | 10 |
+| `sensitivity-coaching-skill-ceiling` | `coaching-skill-ceiling` | 10000, 20000 | 10 |
+| `sensitivity-coaching-skill-increase` | `coaching-skill-increase` | 20, 50 | 10 |
+| `sensitivity-working-skill-increase` | `working-skill-increase` | 1, 2 | 10 |
+| `sensitivity-skill-decay-rate` | `skill-decay-rate` | 0.1, 0.2, 0.3, 0.4, 0.5 | 10 |
+| `sensitivity-leaving-threshold` | `leaving-threshold` | 25, 60 | 10 |
+| `sensitivity-working-turnover-increase` | `working-turnover-increase` | 0.15, 0.30 | 10 |
+| `sensitivity-coaching-turnover-decrease` | `coaching-turnover-decrease` | 1, 5 | 10 |
+| `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1000, 5000 | 10 |
 
 The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0 0 which serves as the unemployment pool) and a variable number of **developer agents** (turtles). Each tick corresponds to one working day; `ticks-per-year = 100`.
 
@@ -381,32 +386,57 @@ The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0
 | `vacancy-rate-pressure` (switch) | When ON, companies that are understaffed (vacancy rate > 0) reduce their effective coaching rate proportionally to their vacancy rate: `effective-coaching-rate = coaching-rate × (1 − vacancy-rate)`. When OFF, coaching rate is applied regardless of staffing levels. | OFF | OFF | This switch captures the operational reality that understaffed teams cannot afford to take developers off productive work for coaching. With OFF, coaching rates are not affected by vacancies, testing whether observed dynamics depend on this constraint. Comparing ON vs. OFF reveals the interaction between staffing and training investment. |
 
 
-### Simulation Run
 
-| Model Parameter | Description | Baseline Value | Tested Values | Justification |
-|---|---|---|---|---|
-| Time steps | Total number of ticks per simulation run. At `ticks-per-year = 100`, one run of 1,000 ticks corresponds to 10 simulated years. | 8'000 ticks (80 years) | 8'000 | The simulation must run long enough for the system to pass any transient initialization phase and reach a stable or recurring dynamic. Below ~200 ticks, equilibria may not yet be observable. The first ~100 ticks should be discarded as a warm-up period. |
+This section summarises the sensitivity analysis performed on the model using NetLogo BehaviorSpace exports and the analysis notebook `sensitivity_analysis_batch_2.ipynb`.
 
----
+Purpose
+------------------
 
-### Notes on Interaction Effects
+Assess how variation in key model parameters (IVs) affects model outputs (DVs). The analysis loads BehaviorSpace spreadsheet CSVs, extracts final-tick values per run, computes one-way effect sizes (η²), fits OLS regressions (slope, R², p-value) and produces per-experiment CSVs and plots as well as combined pivot tables and a heatmap.
 
-Based on the model structure, the following parameter pairs are expected to produce interaction effects and should be jointly varied in experiments:
+How the batch works
+-------------------
+- Input: BehaviorSpace spreadsheet CSVs exported to `output/sensitivity-analysis/` (the notebook looks for files matching `*spreadh*eet*.csv`).
+- For each CSV (one experiment / IV):
+  1. Detect the IV and its human-readable label using `PARAM_LABEL_MAP`.
+  2. Parse the final tick for every run and extract dependent variables.
+  3. Compute η² across IV groups and run an OLS regression of each DV on the IV.
+  4. Save per-experiment CSV and charts (η² bar chart and regression scatterplots).
+- Aggregation: after all experiments are processed the notebook writes combined CSVs and pivot tables and saves a combined heatmap of η² + direction.
 
-1. **`working-turnover-increase` × `coaching-turnover-decrease`** — These two parameters jointly determine the coaching rate a company must sustain to retain developers. Their ratio is the primary driver of equilibrium coaching intensity.
+Dependent variables (DVs)
+--------------------------
 
-2. **`coaching-skill-increase` × `coaching-skill-ceiling` × `diminishing-returns-coaching`** — Together these define the shape of the skill accumulation curve and the marginal return on coaching investment at different skill levels.
+Extracted from the final tick of each run. Indices refer to positions in the corresponding NetLogo reporter list.
 
-3. **`hiring-threshold-mean` × `leaving-threshold`** — Hiring selectivity determines the skill composition of teams; turnover sensitivity determines how quickly that composition changes. Their interaction drives whether companies converge on stable high-skill teams or face chronic churn.
+| Dependent variable | Source reporter | Index | Description |
+|---|---|---|---|
+| `cumulative_revenue` | `dependent-variables` | 0 | Firm cumulative revenue (mean across companies) |
+| `coaching_rate` | `dependent-variables` | 1 | Coaching rate at final tick (mean across companies) |
+| `vacancies` | `dependent-variables` | 2 | Open vacancies (mean across companies) |
+| `propensity_to_leave` | `dependent-variables` | 3 | Mean propensity-to-leave of employees (mean across companies) |
+| `skill_mean` | `skill-distribution` | 0 | Mean skill level across all employed developers |
+| `unemployment_rate` | `unemployment-rate` | — | Fraction of all agents unemployed (enabled via `INCLUDE_UNEMPLOYMENT = True`) |
 
-4. **`skill-decay-rate` × `skill-decay-threshold` × `coaching-skill-increase`** — Decay parameters interact with coaching effectiveness to determine whether skill levels are sustainable without continuous coaching investment.
+Key outputs produced
+--------------------
+- Per-experiment CSV: `output/output-effects/eta2_{experiment_stem}.csv` (η², slope, R², p, direction)
+- Per-experiment charts: `output/output-effects/eta2_{experiment_stem}.png` and `output/output-effects/regression_{experiment_stem}.png`
+- Combined CSVs / pivots:
+  - `output/output-effects/eta2_all_experiments.csv`
+  - `output/output-effects/eta2_pivot_all_experiments.csv` (η² pivot)
+  - `output/output-effects/slope_pivot_all_experiments.csv`
+  - `output/output-effects/direction_pivot_all_experiments.csv`
+- Heatmap: `output/output-effects/eta2_heatmap_all_experiments.png`
 
-5. **`dynamic-hiring-strategy` × `vacancy-rate-cutoff` × `vacancy-rate-pressure`** — These three parameters together control the feedback loop between staffing levels, strategy adaptation, and coaching availability.
+Notes
+-----
+- The notebook expects BehaviorSpace spreadsheet CSV exports in `output/sensitivity-analysis/` and writes results to `output/output-effects/` (directory is created if missing).
+- IV detection uses the `PARAM_LABEL_MAP` inside the notebook: add or modify map entries there to ensure experiment parameter names are converted to readable labels in charts and file names.
+- Toggle `INCLUDE_UNEMPLOYMENT` in the notebook to include `unemployment_rate` as an analysed DV.
+- CSV parsing constants (`PARAM_ROW = 8`, `DATA_START_ROW = 17`) are specific for the BehaviorSpace spreadsheet export format. Do not change unless the export format changes.
 
-
-In order to find reasonable values for the fixed parameters of the model, a sensitivity analysis is done. It is done using the BehaviorSpace feature of NetLogo and is executed from the command line.
-
-See **REFERENCE JUPYTER NOTEBOOK OR PYTHON SCRIPT**
+See `sensitivity_analysis_batch_2.ipynb` for implementation details and to inspect the exact loading/parsing logic used for BehaviorSpace spreadsheet exports.
 
 ## Comparison of Strategies
 

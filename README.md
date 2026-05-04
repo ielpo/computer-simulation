@@ -15,22 +15,13 @@ Python scripts to analyse results of simulation runs and compute statistics.
 ### Run BehaviorSpace from CLI
 Use the helper script to run NetLogo BehaviorSpace experiments in headless mode.
 
-List experiments defined in the model:
-
+First, adapt the `NETLOGO_CONSOLE` and `THREAD_COUNT` variables to your setup.
+Then you can run experiments with
 ```bash
-uv run run_behaviorspace.py --list-experiments
+uv run run_experiments.py
 ```
 
-Run an experiment:
-
-```bash
-uv run run_behaviorspace.py --experiment coaching-rate-vs-revenue
-```
-
-If NetLogo is not on PATH, set `NETLOGO_HOME` or pass `--netlogo-home` / `--headless-cmd`.
-Outputs are written to `output/` by default.
-
----
+The program lists the experiments and allows to select which ones to run.
 
 # Modeling
 

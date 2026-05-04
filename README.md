@@ -52,13 +52,12 @@ Model components
 
 | Behavior | Agent | Description |
 |---|---|---|
-| Determine activity | Company | Each firm has a policy on training, this can be affected by vacancies and is updated at regular intervals. |
+| Determine activity | Company | Each firm has a policy on training, this can be affected by other factors and is updated at regular intervals. |
 | Work | Developer | Execute work for the company, increases the revenue depending on the skill level. Decreases worker satisfaction, slightly increases skill level. |
-| Train | Developer | Improve the skills of employees |
+| Train | Developer | Improves the skill level and worker satifsaction. |
 | Skill decay | Developer | Represents technological developments, skills get outdated over time. |
 | Turnover | Developer | Developers can decide to leave their company and either join the unemployed pool or another company. The company keeps track of the skill level and age of employees that left, this influences the propensity to leave of the remaining developers. |
 | Hiring | Company | Companies hire from the unemployed pool until target headcount, selecting candidates whose skill meets their criteria. |
-| Compare to peers | Developer | The developer can compare itself with its peers. This influences how satisfied a developer is, and therefore the probability to leave. |
 | Strategy update | Company | At configured intervals firms may adjust criteria in response to vacancy pressure, performance, and market situation. |
 
 Temporal and spatial scales
@@ -73,14 +72,14 @@ Initialization and inputs
 
 Outputs and indicators
 
-- Company: per tick revenue, cumulative revenue, total skill, hiring threshold, coaching rate, turnover rate.
-- Market-level: skill distribution and mean, turnover rate.
+- Company: cumulative revenue, coaching rate, vacancies, mean worker propensity to leave (worker dissatisfaction).
+- Market-level: skill distribution mean and standard deviation, unemployment rate.
 
 Assumptions and limitations
 
 - Hiring is driven by a skill level threshold: no salary or other dynamics are modelled.
 - Companies are structurally homogeneous except for stochastic initialization: company heterogeneity beyond these draws is not modelled.
-- Behavior of agents: developers differ only by individual state variables. Preferences, network effects, and company reputations are abstracted.
+- Behavior of agents: developers differ only by individual state variables. Preferences, network effects, and peer effects are abstracted.
 
 ## Simulation Model Specification
 

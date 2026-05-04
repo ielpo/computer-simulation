@@ -1733,8 +1733,8 @@ set-histogram-num-bars 30</update>
       <constants>
         <steppedValueSet variable="strategy-review-interval" first="50" step="100" last="500"></steppedValueSet>
         <steppedValueSet variable="working-turnover-increase" first="0.1" step="0.1" last="0.5"></steppedValueSet>
-        <steppedValueSet variable="coaching-turnover-decrease" first="1" step="1" last="5"></steppedValueSet>
-        <steppedValueSet variable="leaving-threshold" first="10" step="25" last="100"></steppedValueSet>
+        <steppedValueSet variable="coaching-turnover-decrease" first="1" step="2" last="5"></steppedValueSet>
+        <steppedValueSet variable="leaving-threshold" first="10" step="50" last="100"></steppedValueSet>
         <enumeratedValueSet variable="skill-decay">
           <value value="true"></value>
         </enumeratedValueSet>

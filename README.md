@@ -113,7 +113,7 @@ Companies live on patches (one company per patch except `patch 0 0` which is the
 - `ticks-per-year` default 100.
 - `coaching-rate-options` is generated as an integer list up to `max-coaching-rate`.
 - Each patch is assigned a `headcount` sampled from a rounded normal distribution (controlled by `headcount-mean` and `headcount-variance`) and a `hiring-threshold` similarly sampled.
-- Developers are created with ages sampled from a distribution biased toward younger ages, `skill-level` initialized proportional to age plus noise, and `turnover-probability` set to 1.
+- Developers are created with ages sampled from a distribution biased toward younger ages, `skill-level` initialized proportional to age plus noise, and `propensity-to-leave` initialized to 0.
 
 **Model logic**
 
@@ -126,7 +126,7 @@ Companies live on patches (one company per patch except `patch 0 0` which is the
 
 **Parameters**
 
- Headcount distribution (`headcount-mean`, `headcount-variance`), hiring thresholds, coaching parameters (`coaching-skill-increase`, `coaching-turnover-decrease`, `max-coaching-rate`, etc.), turnover dynamics (`working-turnover-increase`), skill decay controls, and strategy dynamics (`dynamic-hiring-strategy`, `dynamic-coaching-strategy`, `strategy-review-interval`, `vacancy-rate-cutoff`).
+ Headcount distribution (`headcount-mean`, `headcount-variance`), hiring thresholds, coaching parameters (`coaching-skill-increase`, `coaching-turnover-decrease`, `max-coaching-rate`, etc.), turnover dynamics (`working-turnover-increase`), skill decay controls, and strategy dynamics (`dynamic-hiring-strategy`, `strategy-review-interval`, `vacancy-rate-cutoff`).
 
 **Outputs**
 - Market-level: `market-mean-skill`, `market-mean-revenue`, `turnovers-this-tick`.
@@ -323,7 +323,7 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 | Name | Description | Initialization |
 |---|---|---|
 | `age` | Age in years | Weighted distribution 20-65 |
-| `skill-level` | Skill level of agent | Proportional to age with random offset |
+| `skill-level` | Skill level of developer | Proportional to age with random offset |
 | `propensity-to-leave` | Dissatisfaction with current company, if greater than `leaving-threshold` turnover | 0 |
 | `last-coaching` | Tick count at last coaching | 0 |
 
@@ -333,8 +333,9 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 |--------------------|--------------------------------------------------|---|
 | `headcount`          | Target number of employees                       |  |
 | `total-skill`        | Sum of skill-level of company                    |  |
-| `hiring-threshold`   | Minimum skill-level required to hire an agent    |  |
+| `hiring-threshold`   | Minimum skill-level required to hire a developer    |  |
 | `coaching-rate`      | Amount of time spent training instead of working |  |
+| `effective-coaching-rate` | Coaching rate adjusted for vacancy pressure (reduced if `vacancy-rate-pressure` is enabled) |  |
 | `activity`           | Activity chosen for current tick                 |  |
 | `revenue`            | Revenue of company for current tick              |  |
 | `cumulative-revenue` | Overall revenue of company                       |  |
@@ -347,7 +348,7 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 | Name                  | Description                            |
 |-----------------------|----------------------------------------|
 | `ticks-per-year`        | Number of ticks in one year            |
-| `turnovers-this-tick`   | Number of agents leaving a company     |
+| `turnovers-this-tick`   | Number of developers leaving a company     |
 | `coaching-rate-options` | Coaching rates that companies can use  |
 | `developer-history-count` | Maximum number of developers that left company to keep track of  |
 | `market-mean-skill`     | Mean skill across all employed workers |
@@ -372,7 +373,6 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 | `dynamic-hiring-strategy`      | Enable changing hiring threshold when updating strategy           |
 | `vacancy-rate-cutoff`          | Maximal allowed vacancy rate before hiring threshold is decreased |
 | `hiring-threshold-ceiling`     | Upper limit for hiring threshold                                  |
-| `dynamic-coaching-strategy`    | Enable changing the coaching rate when updating strategy          |
 | `max-coaching-rate`            | Maximum allowed coaching rate                                     |
 | `vacancy-rate-pressure`            | Enable coaching rate pressure from vacancy rate |
 | `leaving-threshold`   | Value of `propensity-to-leave` at which developer changes company |
@@ -399,7 +399,7 @@ BehaviorSpace exports one row every tick. Each row has the following columns:
   - Index 0: Mean skill level across all employed developers
   - Index 1: Standard deviation of skill level
   - Index 2: Median skill level
-- **`unemployment-rate`**: fraction of all agents currently unemployed (0–1)
+- **`unemployment-rate`**: fraction of all developers currently unemployed (0–1)
 
 Example with three companies at tick 48:
 ```
@@ -409,8 +409,9 @@ Example with three companies at tick 48:
 ## Sensitivity Analysis
 
 All sensitivity experiments use: `repetitions=10`, `timeLimit=8000 ticks`, metrics collected every tick.
-
 Reporters collected per run: `dependent-variables`, `skill-distribution`, `unemployment-rate`.
+
+The sensitivity analysis is limited to individual IVs in order to reduce the runtime and evaluation complexity.
 
 | Experiment name | IV | Tested values | Repetitions |
 |---|---|---|---|
@@ -425,7 +426,7 @@ Reporters collected per run: `dependent-variables`, `skill-distribution`, `unemp
 | `sensitivity-coaching-turnover-decrease` | `coaching-turnover-decrease` | 1, 5 | 10 |
 | `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1000, 5000 | 10 |
 
-The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0 0 which serves as the unemployment pool) and a variable number of **developer agents** (turtles). Each tick corresponds to one working day; `ticks-per-year = 100`.
+The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0` which serves as the unemployment pool) and a variable number of developers (turtles). Each tick corresponds to one working day, with a year being 100 days.
 
 ### Developers
 
@@ -444,7 +445,7 @@ The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0
 | `coaching-skill-increase` | Skill points added per coaching tick (before diminishing-returns adjustment if enabled). | **TODO** | 20, 50 | Controls the speed of human capital accumulation. Low values make coaching investment slow and potentially unattractive given turnover risk. High values make even short coaching sessions highly impactful, potentially destabilizing the market if developers quickly outgrow their company's hiring threshold. |
 | `working-skill-increase` | Skill points added per working tick (capped at `coaching-skill-ceiling`). | **TODO** | 1, 2 | Represents on-the-job learning during productive work. A value of 0 means only coaching builds skill. A high value makes working almost as skill-building as coaching, reducing the incentive to invest in formal coaching sessions. |
 | `skill-decay` (switch) | When ON, developer skill decays annually if the developer has not been coached within `skill-decay-threshold` ticks. | ON | ON | Skill decay motivates recurring coaching investment. Without decay, a single investment in coaching has permanent returns; with decay, coaching becomes an ongoing cost. This switch isolates whether the decay mechanism is necessary for observed long-run dynamics. |
-| `skill-decay-threshold` | Number of ticks without coaching before skill decay begins. At `ticks-per-year = 100`, a threshold of 300 ticks equals 3 years. | 200 | 200 (2 yr) | A short threshold forces companies to coach frequently or risk skill erosion. A long threshold makes decay a background effect. The boundary at 100 ticks (1 year) tests whether annual coaching is required; at 800 ticks, decay becomes nearly irrelevant over a typical simulation run. |
+| `skill-decay-threshold` | Number of ticks without coaching before skill decay begins. At `ticks-per-year = 100`, a threshold of 300 ticks equals 3 years. | 300 | 300 (3 yr) | A short threshold forces companies to coach frequently or risk skill erosion. A long threshold makes decay a background effect. The boundary at 100 ticks (1 year) tests whether annual coaching is required; at 800 ticks, decay becomes nearly irrelevant over a typical simulation run. |
 | `skill-decay-rate` | Annual rate at which skill decays (applied per-tick as `rate / ticks-per-year`). A rate of 0.1 means 10% annual skill loss. | **TODO** | 0.05, 0.10 | Controls the severity of skill obsolescence. Low rates make decay a minor background effect; high rates force companies into aggressive coaching schedules or accept significant skill erosion. At 0.20, a developer losing no coaching for 5 years would retain only ~33% of their peak skill. |
 
 ### Turnover Behavior
@@ -469,28 +470,21 @@ The model contains **99 companies** (patches on a 10×10 grid, excluding patch 0
 | `vacancy-rate-pressure` (switch) | When ON, companies that are understaffed (vacancy rate > 0) reduce their effective coaching rate proportionally to their vacancy rate: `effective-coaching-rate = coaching-rate × (1 − vacancy-rate)`. When OFF, coaching rate is applied regardless of staffing levels. | OFF | OFF | This switch captures the operational reality that understaffed teams cannot afford to take developers off productive work for coaching. With OFF, coaching rates are not affected by vacancies, testing whether observed dynamics depend on this constraint. Comparing ON vs. OFF reveals the interaction between staffing and training investment. |
 
 
+### Evaluation
 
-This section summarises the sensitivity analysis performed on the model using NetLogo BehaviorSpace exports and the analysis notebook `sensitivity_analysis_batch_2.ipynb`.
+Refer to `sensitivity_analysis.ipynb` for implementation details.
 
-Purpose
-------------------
-
-Assess how variation in key model parameters (IVs) affects model outputs (DVs). The analysis loads BehaviorSpace spreadsheet CSVs, extracts final-tick values per run, computes one-way effect sizes (η²), fits OLS regressions (slope, R², p-value) and produces per-experiment CSVs and plots as well as combined pivot tables and a heatmap.
-
-How the batch works
--------------------
-- Input: BehaviorSpace spreadsheet CSVs exported to `output/sensitivity-analysis/` (the notebook looks for files matching `*spreadh*eet*.csv`).
+- Input: BehaviorSpace spreadsheet CSVs exported to `output/sensitivity-analysis/` (the notebook looks for files matching `*spreadhseet*.csv`).
 - For each CSV (one experiment / IV):
   1. Detect the IV and its human-readable label using `PARAM_LABEL_MAP`.
-  2. Parse the final tick for every run and extract dependent variables.
+  2. Parse the tick values for every run and extract dependent variables.
   3. Compute η² across IV groups and run an OLS regression of each DV on the IV.
   4. Save per-experiment CSV and charts (η² bar chart and regression scatterplots).
 - Aggregation: after all experiments are processed the notebook writes combined CSVs and pivot tables and saves a combined heatmap of η² + direction.
 
-Dependent variables (DVs)
---------------------------
+**Dependent variables (DVs)**
 
-Extracted from the final tick of each run. Indices refer to positions in the corresponding NetLogo reporter list.
+Average value over all ticks, excluding a stabilization time of 500 ticks. Indices refer to positions in the corresponding NetLogo reporter list.
 
 | Dependent variable | Source reporter | Index | Description |
 |---|---|---|---|
@@ -499,10 +493,10 @@ Extracted from the final tick of each run. Indices refer to positions in the cor
 | `vacancies` | `dependent-variables` | 2 | Open vacancies (mean across companies) |
 | `propensity_to_leave` | `dependent-variables` | 3 | Mean propensity-to-leave of employees (mean across companies) |
 | `skill_mean` | `skill-distribution` | 0 | Mean skill level across all employed developers |
-| `unemployment_rate` | `unemployment-rate` | — | Fraction of all agents unemployed (enabled via `INCLUDE_UNEMPLOYMENT = True`) |
+| `unemployment_rate` | `unemployment-rate` | - | Fraction of all agents unemployed (enabled via `INCLUDE_UNEMPLOYMENT = True`) |
 
 Key outputs produced
---------------------
+
 - Per-experiment CSV: `output/output-effects/eta2_{experiment_stem}.csv` (η², slope, R², p, direction)
 - Per-experiment charts: `output/output-effects/eta2_{experiment_stem}.png` and `output/output-effects/regression_{experiment_stem}.png`
 - Combined CSVs / pivots:
@@ -512,14 +506,12 @@ Key outputs produced
   - `output/output-effects/direction_pivot_all_experiments.csv`
 - Heatmap: `output/output-effects/eta2_heatmap_all_experiments.png`
 
-Notes
------
 - The notebook expects BehaviorSpace spreadsheet CSV exports in `output/sensitivity-analysis/` and writes results to `output/output-effects/` (directory is created if missing).
 - IV detection uses the `PARAM_LABEL_MAP` inside the notebook: add or modify map entries there to ensure experiment parameter names are converted to readable labels in charts and file names.
 - Toggle `INCLUDE_UNEMPLOYMENT` in the notebook to include `unemployment_rate` as an analysed DV.
-- CSV parsing constants (`PARAM_ROW = 8`, `DATA_START_ROW = 17`) are specific for the BehaviorSpace spreadsheet export format. Do not change unless the export format changes.
+- CSV parsing constants (`PARAM_ROW = 8`, `DATA_START_ROW = 17`) are specific for the BehaviorSpace spreadsheet export format.
 
-See `sensitivity_analysis_batch_2.ipynb` for implementation details and to inspect the exact loading/parsing logic used for BehaviorSpace spreadsheet exports.
+
 
 ## Comparison of Strategies
 

@@ -83,142 +83,235 @@ Assumptions and limitations
 
 ## Simulation Model Specification
 
+### Elements and Structure
 
-* ticks-per-year: 100
-* coaching-rate-options: Integer list between 0 and max-coaching-rate
-* headcount: Rounded normal distribution using global parameters
-* hiring-threshold: Rounded normal distribution using global parameters
-* coaching-rate: One of integer coaching rates up to global parameter value
-* age: Random between 20 and 64, with weighted distribution
-* skill-level: Proportional to age with random offset
-* turnover-probability: 1
+**Entities and State**
 
+- Agents: Developers (turtles) with state variables: `age`, `skill-level`, `propensity-to-leave`, `last-coaching`.
+- Companies: represented by patches with state: `headcount`, `total-skill`, `hiring-threshold`, `coaching-rate`, `effective-coaching-rate`, `activity`, `revenue`, `cumulative-revenue`, `last-review`, `developer-history`, `developers-leaving`.
+- Globals: `ticks-per-year`, `turnovers-this-tick`, `coaching-rate-options`, `developer-history-count`, `market-mean-skill`, `market-mean-revenue` and the set of GUI model parameters controlling hiring, coaching, turnover, decay, and strategy updates.
 
-### Timestep
+**Topology**
 
-For each tick, developers and companies act in the following sequence:
+Companies live on patches (one company per patch except `patch 0 0` which is the unemployed pool). Developers occupy patches (work for the company on that patch) or `patch 0 0` when unemployed.
 
-**Developer actions**
+**Time and Scheduling**
 
-* Decide whether to leave the company (turnover-probability)
-* Increase age and check for retirement
+- Discrete-time, synchronous ticks. One tick is the model's basic time-step; `ticks-per-year` maps ticks to years.
+- Per tick schedule (observer/agent ordering):
+  1. Developers decide whether to leave the company, `propensity-to-leave` over threshold
+  2. Developers increase age and check for retirement
+  3. Companies fill vacancies based on `hiring-threshold`
+  4. Companies choose activity, with probability `coaching-rate`
+    - _Coaching day_: developers increase their skill level and their `propensity-to-leave` decreases (satisfied, growing workers stay).
+    - _Working day_: developers focus on regular work and their `propensity-to-leave` increases (stagnating workers become more likely to leave). Company revenue increases.
+  5. Update the company strategy at the fixed interval
 
-**Company actions**
+**Initialization**
 
-* Fill vacancies (hiring-threshold)
-* Choose activity (coaching-rate)
-  * _Coaching day_: developers increase their skill level and the turnover probability decreases (satisfied, growing workers stay).
-  * _Working day_: developers focus on regular work and their turnover probability increases (stagnating workers become more likely to leave). Company revenue increases.
-* Update the company strategy at the fixed interval
-* Update the color of the patches
+- All state variables zero-initialized, then patches and turtles are initialized.
+- `ticks-per-year` default 100.
+- `coaching-rate-options` is generated as an integer list up to `max-coaching-rate`.
+- Each patch is assigned a `headcount` sampled from a rounded normal distribution (controlled by `headcount-mean` and `headcount-variance`) and a `hiring-threshold` similarly sampled.
+- Developers are created with ages sampled from a distribution biased toward younger ages, `skill-level` initialized proportional to age plus noise, and `turnover-probability` set to 1.
 
-**GEMINI PROPOSAL**
+**Model logic**
 
-### Dynamic Propensity to Leave
+- Turnover: each developer leaves with their personal `turnover-probability` and moves to the unemployed pool (patch 0 0).
+- Hiring: patches attempt to hire until `headcount` is met, selecting candidates whose skill >= `hiring-threshold` (threshold can adjust dynamically).
+- Coaching vs Work: firms split time between coaching (developers gain `coaching-skill-increase`, turnover decreases, less revenue that tick) and working (developers gain `working-skill-increase`, turnover increases, firms earn revenue).
+- Diminishing returns and ceilings: coaching gains can be limited by `coaching-skill-ceiling` and `diminishing-returns-coaching`.
+- Skill decay: optional decay if developers spend long periods without coaching, controlled by `skill-decay-threshold` and `skill-decay-rate`.
+- Strategy updates: at intervals, firms may raise/lower `hiring-threshold` and alter `coaching-rate` based on vacancy pressure, subject to configured ceilings/cutoffs.
 
-| Effect | Trigger | Simulation Logic |
-| --- | --- | --- |
-| **Social Comparison** | Peer Developer (Leaver) | Increase $P_{leave}$ if a peer with a similar `skill level` has recently left the company. Similarity in technical abilities makes a peer's departure a stronger signal for the focal agent. |
-| **Survivor Burden** | Company (Employer) | Increase $P_{leave}$ if the Company's `actual headcount` is significantly below its `target headcount`. This represents "inadequate staffing," where the remaining agents face higher workloads and stress.[1, 2] |
-| **Peer Skill Support** | Peer Developer (Coworker) | Decrease $P_{leave}$ based on the total or average `skill level` of other developers in the same firm. High-skilled peers provide "instrumental support" (task assistance) that reduces individual frustration and boosts satisfaction. |
-| **Turnover Contagion** | Peer Developer (Group) | Increase $P_{leave}$ based on the frequency of recent departures (the "Domino Effect"). Multiple resignations act as a catalyst, signaling organizational instability to those who remain.[1, 3, 4] |
+**Parameters**
 
-*   **Compare to peers (Developer):** Instead of just comparing satisfaction, the developer agent checks the recent history of its coworkers. If a "similar" peer (in terms of age or skill) has left in the last $N$ ticks, the developer’s $P_{leave}$ increases by a fixed coefficient. This mimics social modeling where leaving is viewed as more acceptable or desirable because a similar peer did so.[5, 1]
-*   **Work (Developer):** Add a penalty to the satisfaction decrease calculated during work if the `headcount deficit` (Target - Actual) is high. This simulates the increased demands of "surviving" employees who must cover for vacant roles.[2]
-*   **Train (Developer):** While you have abstracted visibility, research shows that training acts as a "retention anchor" because it makes employees feel valued and supported. In your model, when a developer undergoes the `Train` activity, you can apply a direct reduction to their $P_{leave}$, representing the "Double Dividend" where investment in skills also fosters loyalty.[6, 7]
-*   **Hiring (Company):** If the company allows a high `headcount deficit` to persist, it effectively creates a feedback loop where the remaining developers are more likely to leave, potentially leading to a "collapse" of the firm's workforce.
+ Headcount distribution (`headcount-mean`, `headcount-variance`), hiring thresholds, coaching parameters (`coaching-skill-increase`, `coaching-turnover-decrease`, `max-coaching-rate`, etc.), turnover dynamics (`working-turnover-increase`), skill decay controls, and strategy dynamics (`dynamic-hiring-strategy`, `dynamic-coaching-strategy`, `strategy-review-interval`, `vacancy-rate-cutoff`).
 
-### Modeling the Propensity Update
-In each tick, an agent's propensity to leave can be updated by:
-$$P_{i,t+1} = P_{i,t} + (\alpha \cdot \text{LeaverSimilarity}) + (\beta \cdot \text{StaffingDeficit}) - (\gamma \cdot \text{PeerSkillSupport})$$
-
-Where:
-*   $\alpha$ represents the strength of **Social Comparison** (triggered when similar peers leave).
-*   $\beta$ represents the **Survivor Burden** (triggered when vacancies are high).[2]
-*   $\gamma$ represents the **Support Benefit** (proportional to the quality/skill of remaining peers).
-
-**GEMINI OUTPUT END**
-
-
-
-- Entities and state:
-  - Agents: Developers (turtles) with state variables: `age`, `skill-level`, `turnover-probability`, `last-coaching`.
-  - Companies: represented by patches with state: `headcount`, `total-skill`, `hiring-threshold`, `coaching-rate`, `effective-coaching-rate`, `activity`, `revenue`, `cumulative-revenue`, `last-review`.
-  - Globals: `ticks-per-year`, `turnovers-this-tick`, `coaching-rate-options`, `market-mean-skill`, `market-mean-revenue` and the set of model parameters controlling hiring, coaching, turnover, decay, and strategy updates.
-
-- Topology: Companies live on patches (one company per patch except patch 0 0 which is the unemployed pool). Developers occupy patches (work for the company on that patch) or patch 0 0 when unemployed.
-
-- Time / Scheduling:
-  - Discrete-time, synchronous ticks. One tick is the model's basic time-step; `ticks-per-year` maps ticks to years.
-  - Per tick schedule (observer/agent ordering):
-    1. Turnover: developers probabilistically leave companies.
-    2. Increase age and retire if applicable.
-    3. Companies (patches) fill vacancies according to `hiring-threshold`.
-    4. Companies choose an `activity` (coach vs work) determined by `coaching-rate` and vacancy pressure.
-    5. Companies execute activity: on coaching days developers gain skill and reduce turnover probability; on working days developers gain minimal skill and turnover probability increases; companies accumulate revenue.
-    6. Strategy review: at intervals (`strategy-review-interval`) companies may update `hiring-threshold` or `coaching-rate` according to vacancy pressure and configured dynamic strategies.
-
-- Initialization:
-  - All state variables zero-initialized, then patches and turtles are initialized.
-  - `ticks-per-year` default 100.
-  - `coaching-rate-options` is generated as an integer list up to `max-coaching-rate`.
-  - Each patch is assigned a `headcount` sampled from a rounded normal distribution (controlled by `headcount-mean` and `headcount-variance`) and a `hiring-threshold` similarly sampled.
-  - Developers are created with ages sampled from a distribution biased toward younger ages, `skill-level` initialized proportional to age plus noise, and `turnover-probability` set to 1.
-
-- Key processes (model logic):
-  - Turnover: each developer leaves with their personal `turnover-probability` and moves to the unemployed pool (patch 0 0).
-  - Hiring: patches attempt to hire until `headcount` is met, selecting candidates whose skill >= `hiring-threshold` (threshold can adjust dynamically).
-  - Coaching vs Work: firms split time between coaching (developers gain `coaching-skill-increase`, turnover decreases, less revenue that tick) and working (developers gain `working-skill-increase`, turnover increases, firms earn revenue).
-  - Diminishing returns and ceilings: coaching gains can be limited by `coaching-skill-ceiling` and `diminishing-returns-coaching`.
-  - Skill decay: optional decay if developers spend long periods without coaching, controlled by `skill-decay-threshold` and `skill-decay-rate`.
-  - Strategy updates: at intervals, firms may raise/lower `hiring-threshold` and alter `coaching-rate` based on vacancy pressure, subject to configured ceilings/cutoffs.
-
-- Inputs (parameters): Headcount distribution (`headcount-mean`, `headcount-variance`), hiring thresholds, coaching parameters (`coaching-skill-increase`, `coaching-turnover-decrease`, `max-coaching-rate`, etc.), turnover dynamics (`working-turnover-increase`), skill decay controls, and strategy dynamics (`dynamic-hiring-strategy`, `dynamic-coaching-strategy`, `strategy-review-interval`, `vacancy-rate-cutoff`).
-
-- Outputs / metrics (BehaviorSpace reporters and UI monitors):
-  - Market-level: `market-mean-skill`, `market-mean-revenue`, `turnovers-this-tick`.
-  - Firm-level (patch reporters): per-patch `revenue`, `cumulative-revenue`, `total-skill`, `hiring-threshold`, `coaching-rate`.
-  - Agent-level: `skill-mean`, `turnover-rate` and distributions (skills, age, coaching-rate) used in plots.
-  - BehaviorSpace reporters: aggregated metrics such as `revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, `skill-at-coaching-rate`, `headcount-at-coaching-rate`.
-
+**Outputs**
+- Market-level: `market-mean-skill`, `market-mean-revenue`, `turnovers-this-tick`.
+- Firm-level (patch reporters): per-patch `revenue`, `cumulative-revenue`, `total-skill`, `hiring-threshold`, `coaching-rate`.
+- Agent-level: `skill-mean`, `turnover-rate` and distributions (skills, age, coaching-rate) used in plots.
+- BehaviorSpace reporters: aggregated metrics such as `revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, `skill-at-coaching-rate`, `headcount-at-coaching-rate`.
 
 ### Pseudocode
 
 ```
-Function tick:
-  For each Agent:
-    turnover-probability()
+===============================
+INITIALIZATION
+===============================
+
+Function setup:
+  Initialize variables
+  setup-patches()
+  setup-turtles()
+
+Function setup-patches:
+  For each patch except patch(0,0):
+    Initialize headcount and hiring-threshold from normal distributions
+    Set coaching-rate from options
+    Create 'headcount' developers on patch
+
+Function setup-turtles:
+  For each developer:
+    age = weighted random from 20-65 years
+    skill-level = initial-skill(age)
+    propensity-to-leave = 0
+    last-coaching = 0
+  Update all patch total-skill
+
+Function initial-skill(age) -> number:
+  Return 1000 + ((age - 20) / 45) * 6000 + random offset
+
+Function age-probability(age) -> float:
+  If age < 30: return (age - 20) / 10
+  Else: return 1
+
+===============================
+MAIN SIMULATION LOOP
+===============================
+
+Function go:
+  turnovers-this-tick = 0
+  For each developer:
+    turnover()
     increase-age()
-  For each Company:
+
+  update-market-stats()
+  
+  For each company:
+    revenue = 0
+    Trim developer-history to max size
     fill-vacancies()
     choose-activity()
-  For each Agent in Company:
-    If activity is coaching:
-      decrease-agent-turnover()
-    Else:
-      increase-agent-turnover()
-      do-work()
+    execute-activity()
 
-Function turnover-probability:
-  If random > agent-turnover:
-    leave-company()
+    Update total-skill = sum of developers' skills
+    If activity is "work": revenue = total-skill
+    Add revenue to cumulative-revenue
+    
+    If dynamic-hiring-strategy and time for review:
+      update-strategy()
+  
+===============================
+DEVELOPER BEHAVIORS
+===============================
+
+Function turnover:
+  For each developer in company:
+    If propensity-to-leave > leaving-threshold:
+      Move developer to unemployed pool (patch 0,0)
+      Record developer state in company's developer-history
+      Increment turnovers-this-tick
 
 Function increase-age:
-  Increment agent.age
-  If agent.age >= 65:
-    Die (retire)
-    Spawn new Agent
+  For each developer:
+    Increment age by (1 / ticks-per-year)
+    If age >= 65:
+      Remove developer (retire)
+      Spawn new developer with age 20-30
+      Set skill-level = initial-skill(20)
 
-Function fill-vacancies:
-  For each vacancy:
-    For each unemployed agent:
-      If agent.skill >= company.hiring-threshold
-        hire-agent()
-        Exit loop 
+Function do-coaching:
+  If diminishing-returns-coaching:
+    skill-level += coaching-skill-increase * (1 - skill-level / coaching-skill-ceiling)
+  Else:
+    skill-level += coaching-skill-increase
+  propensity-to-leave -= coaching-turnover-decrease (min 0)
+  last-coaching = current tick
 
 Function do-work:
-  Increase company.output
-  Increment agent.skill-level
+  skill-level = min(skill-level + working-skill-increase, coaching-skill-ceiling)
+  appeal = company-appeal(skill-level, company's developer-history)
+  propensity-to-leave -= appeal * 0.1
+  propensity-to-leave += working-turnover-increase
+  
+  If skill-decay enabled and (ticks since last-coaching) > skill-decay-threshold:
+    skill-level *= (1 - skill-decay-rate / ticks-per-year)
+
+===============================
+COMPANY LOGIC
+===============================
+
+Function fill-vacancies:
+  vacancies = headcount - developers on patch
+  If vacancies > 0:
+    candidates = unemployed developers with skill >= hiring-threshold
+    If any candidates:
+      Hire random candidates up to vacancy count
+
+Function choose-activity:
+  If no developers on patch: return
+  
+  effective-coaching-rate = coaching-rate
+  If vacancy-rate-pressure:
+    vacancy-rate = 1 - (developer-count / headcount)
+    effective-coaching-rate *= (1 - vacancy-rate)
+  
+  If random < effective-coaching-rate:
+    activity = "coach"
+  Else:
+    activity = "work"
+
+Function execute-activity:
+  If no developers on patch: return
+  
+  If activity = "coach":
+    For each developer: do-coaching()
+  Else if activity = "work":
+    For each developer: do-work()
+
+Function company-appeal(skill-level, developer-history) -> number:
+  appeal = 0
+  For each departure in developer-history:
+    ratio = ln(skill-level / departure.skill) ^ 2
+    weight = 1 / (current-tick - departure.tick + 1)
+    appeal += ratio * weight
+  Return appeal
+
+Function update-strategy:
+  vacancy-rate = 1 - (developer-count / headcount)
+  
+  If vacancy-rate > vacancy-rate-cutoff:
+    hiring-threshold *= 0.7  (lower threshold to hire more)
+  Else:
+    hiring-threshold *= 1.1  (raise threshold to be selective)
+  
+  Clamp hiring-threshold: [100, hiring-threshold-ceiling]
+
+Function color-patches:
+  For each company patch:
+    vacancy-rate = 1 - (developer-count / headcount)
+    Patch color scales from grey (0 vacancies) to black (all vacancies)
+
+===============================
+MARKET STATISTICS
+===============================
+
+Function update-market-stats:
+  market-mean-skill = mean skill-level of all employed developers
+  market-mean-revenue = mean cumulative-revenue of all companies
+
+===============================
+REPORTERS (Data Collection)
+===============================
+
+Function revenue-distribution -> [mean, std-dev, median] of revenue across companies
+
+Function skill-distribution -> [mean, std-dev, median] of skill-level across employed developers
+
+Function turnover-rate -> number: turnovers-this-tick
+
+Function unemployment-rate -> number: (unemployed developers) / (all developers)
+
+Function headcount-of-companies -> list of headcount values for each company
+
+Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
+  For each company return:
+    - cumulative-revenue
+    - coaching-rate
+    - vacancy count
+    - mean propensity-to-leave of developers
 ```
 
 ## Implementation

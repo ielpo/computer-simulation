@@ -530,7 +530,7 @@ Key outputs produced
 #### Changing variables experiment 1
 | Variable                  | From | To  | Step |
 | ------------------------- | ---- | --- | ---- |
-| `coaching-skill-increase` | 0    | 100 | 10   |
+| `coaching-skill-increase` | 0    | 100 | 20   |
 | `working-skill-increase`  | 0    | 10  | 2    |
 | `max-coaching-rate`       | 0    | 20  | 5    |
 
@@ -539,7 +539,7 @@ Key outputs produced
 | ---------------------------- | ---- | --- | ---- |
 | `working-turnover-increase`  | 0.0  | 0.5 | 0.1  |
 | `coaching-turnover-decrease` | 0.0  | 5.0 | 1    |
-| `leaving-threshold`          | 10   | 100 | 10   |
+| `leaving-threshold`          | 10   | 100 | 50   |
 
 #### Changing variables experiment 3
 | Variable                | From | To  | Step |
@@ -560,16 +560,16 @@ Key outputs produced
 | ---------------------------- | ---- | --- | ---- |
 | `strategy-review-interval`   | 50   | 500 | 100  |
 | `working-turnover-increase`  | 0.1  | 0.5 | 0.1  |
-| `coaching-turnover-decrease` | 1    | 5   | 1    |
-| `leaving-threshold`          | 10   | 100 | 25   |
+| `coaching-turnover-decrease` | 1    | 5   | 2    |
+| `leaving-threshold`          | 10   | 100 | 50   |
 
 #### Changing variables experiment 2
 | Variable                    | From | To   | Step |
 | --------------------------- | ---- | ---- | ---- |
 | `strategy-review-interval`  | 50   | 500  | 100  |
 | `headcount-variance`        | 0    | 200  | 100  |
-| `hiring-threshold-variance` | 0    | 500  | 100  |
-| `vacancy-rate-cutoff`       | 0.00 | 1.00 | 0.20 |
+| `hiring-threshold-variance` | 0    | 500  | 200  |
+| `vacancy-rate-cutoff`       | 0.00 | 1.00 | 0.2 |
 
 #### Changing variables experiment 3
 | Variable                       | From | To    | Step |

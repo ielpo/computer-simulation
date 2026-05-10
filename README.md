@@ -578,21 +578,6 @@ Key outputs produced
 | `coaching-skill-ceiling`       | 2000 | 20000 | 4000 |
 | `diminishing-returns-coaching` | true | false | -    |
 
-### (OPTIONAL) Tradeoff between `hiring threshold` and `coaching rate`
-- What is the ideal combination of hiring threshold and coaching rate
-  - Can companies focus on *working* when they are *hiring* skillful personnel to maximise output?
-  - Can companies *coach* at a higher rate while *hiring* less skillful personnel and still achieve good output?
-  - When companies are focussing on *coaching* or *working*, how does this affect *propensity to leave* when looking at different *hiring* strategies?
-
-#### Changing variables experiment 1
-| Variable                     | From | To  | Step |
-| ---------------------------- | ---- | --- | ---- |
-| `hiring-threshold-variance`  | 0    | 500 | 100  |
-| `working-turnover-increase`  | 0    | 500 | 100  |
-| `working-turnover-increase`  | 0.0  | 0.5 | 0.1  |
-| `coaching-turnover-decrease` | 0.0  | 5.0 | 1    |
-| `leaving-threshold`          | 10   | 100 | 25   |
-
 # Credits
 Developed by
 - Güntensperger Raphael

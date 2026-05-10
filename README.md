@@ -578,6 +578,43 @@ Key outputs produced
 | `coaching-skill-ceiling`       | 2000 | 20000 | 4000 |
 | `diminishing-returns-coaching` | true | false | -    |
 
+## Running the experiments
+The two experiments with a total of six sub-experiments take *significant* **time** and **resources** to run.
+Especially the experiments with more than 100 runs run on an average notebook for up to **24 hours**!
+
+Running the experiments logs the state of every company at every step, which produces **vast amounts** of data (tens of gigabytes for all experiments).
+
+⚠️ *Please* consider these limitations when running the experiments ⚠️
+
+### Running the experiments with `runpod.ai`
+- `runpod` allows you to spin up so-called `pods` to execute compute-heavy tasks
+- Go to https://runpod.ai and select `pods` in the navigation
+- In the **Deploy a Pod** page, select **CPU** and choose a configuration with at least **32 vCPUs**
+- As soon as the `pod` is up and running connect to it using SSH
+- Clone this repository using your GitHub-username and -token
+  - ```bash
+    git clone https://<username>:<token>@github.com/ielpo/computer-simulation
+    ```
+- Change the directory to `computer-simulation`
+  - ```bash
+    cd computer-simulation
+    ```
+- Upload the `Netlogo`-installer `NetLogo-7.0.3-64.tgz` to this directory
+  - Either use `scp` or `runpodctl send`
+- Run the `runpod_setup.sh` to get the environment ready
+  - ```bash
+    ./runpod_setup.sh
+    ````
+- After the installation you can execute the experiments
+  - ```bash
+    ./run_experiments.sh --threads <vCPU-count>
+    ```
+- If you want to run specific experiments, you can specify them via an argument
+  - ```bash
+    ./run_experiments.sh --threads <vCPU-count> --experiments "coaching-output-exp3 strategy-exp3"
+    ```
+
+
 # Credits
 Developed by
 - Güntensperger Raphael

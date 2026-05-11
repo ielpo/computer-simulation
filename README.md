@@ -356,8 +356,8 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 
 **Global Parameters**
 
-| Name | Description |
-|------------------------------|-------------------------------------------------------------------|
+| Name                           | Description                                                       |
+| ------------------------------ | ----------------------------------------------------------------- |
 | `headcount-mean`               | Mean for headcount distribution                                   |
 | `headcount-variance`           | Variance for headcount distribution                               |
 | `hiring-threshold-mean`        | Mean for hiring threshold distribution                            |
@@ -374,8 +374,8 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 | `vacancy-rate-cutoff`          | Maximal allowed vacancy rate before hiring threshold is decreased |
 | `hiring-threshold-ceiling`     | Upper limit for hiring threshold                                  |
 | `max-coaching-rate`            | Maximum allowed coaching rate                                     |
-| `vacancy-rate-pressure`            | Enable coaching rate pressure from vacancy rate |
-| `leaving-threshold`   | Value of `propensity-to-leave` at which developer changes company |
+| `vacancy-rate-pressure`        | Enable coaching rate pressure from vacancy rate                   |
+| `leaving-threshold`            | Value of `propensity-to-leave` at which developer changes company |
 | `working-turnover-increase`    | Increase in turnover probability when working                     |
 | `coaching-turnover-decrease`   | Decrease in turnover probability when coaching                    |
 
@@ -513,15 +513,106 @@ Key outputs produced
 
 
 
-## Comparison of Strategies
+## Experiments related to research questions
+### General setup for experiments
+- Each experiment is conducted with a **subset** of variables that are *changed* during the different runs of an experiment. Each experiment in the following chapters describes the variables that are changed with the specified *range*.
 
-Experiment ideas:
-- how often is a review done
+- Every experiment is executed for a total of $8000$ steps which corresponds to a duration of $80$ years.
 
-To answer the initial research question, the simulation data is analyzed from different viewpoints to show the dependence of the DVs from the company choices.
+### Basic analysis on coaching rate and output
+- What is the ideal *coaching rate* for a company to adapt 
+- Under which conditions are *turnovers* in a company minimised
+  
+1. When `coaching` and `working` improves skill *more*/*less*?
+2. When `coaching` and `working` decrease and increase the propensity to leave *more*/*less* for different *thresholds to leave* a company?
+3. When `skill` decays when a developer can *not*/*more often* participate in coachings and how this affects the *propensity to leave* a company?
 
+#### Changing variables experiment 1
+| Variable                  | From | To  | Step |
+| ------------------------- | ---- | --- | ---- |
+| `coaching-skill-increase` | 0    | 100 | 20   |
+| `working-skill-increase`  | 0    | 10  | 2    |
+| `max-coaching-rate`       | 0    | 20  | 5    |
 
+#### Changing variables experiment 2
+| Variable                     | From | To  | Step |
+| ---------------------------- | ---- | --- | ---- |
+| `working-turnover-increase`  | 0.0  | 0.5 | 0.1  |
+| `coaching-turnover-decrease` | 0.0  | 5.0 | 1    |
+| `leaving-threshold`          | 10   | 100 | 50   |
 
+#### Changing variables experiment 3
+| Variable                | From | To  | Step |
+| ----------------------- | ---- | --- | ---- |
+| `skill-decay-threshold` | 100  | 500 | 100  |
+| `skill-decay-rate`      | 0.0  | 0.2 | 0.05 |
+
+### Strategy and strategy reviews
+- How are `revenue` and `retention` affected from adaptive hiring and coaching strategies?
+- How often should companies revisit their `coaching strategy` and `hiring strategy`
+
+1. When developers *propensity to leave* is *less*/*more* influenced by receiving `coaching` or `working` 
+2. When the companies have *more*/*less* variance in `headcount`, `hiring threshold` as well as `vacancy rate` cutoff?
+3. When `coaching` is limited *more*/*less*?
+
+#### Changing variables experiment 1
+| Variable                     | From | To  | Step |
+| ---------------------------- | ---- | --- | ---- |
+| `strategy-review-interval`   | 50   | 500 | 100  |
+| `working-turnover-increase`  | 0.1  | 0.5 | 0.1  |
+| `coaching-turnover-decrease` | 1    | 5   | 2    |
+| `leaving-threshold`          | 10   | 100 | 50   |
+
+#### Changing variables experiment 2
+| Variable                    | From | To   | Step |
+| --------------------------- | ---- | ---- | ---- |
+| `strategy-review-interval`  | 50   | 500  | 100  |
+| `headcount-variance`        | 0    | 200  | 100  |
+| `hiring-threshold-variance` | 0    | 500  | 200  |
+| `vacancy-rate-cutoff`       | 0.00 | 1.00 | 0.2 |
+
+#### Changing variables experiment 3
+| Variable                       | From | To    | Step |
+| ------------------------------ | ---- | ----- | ---- |
+| `strategy-review-interval`     | 50   | 500   | 50   |
+| `coaching-skill-ceiling`       | 2000 | 20000 | 4000 |
+| `diminishing-returns-coaching` | true | false | -    |
+
+## Running the experiments
+The two experiments with a total of six sub-experiments take *significant* **time** and **resources** to run.
+Especially the experiments with more than 100 runs run on an average notebook for up to **24 hours**!
+
+Running the experiments logs the state of every company at every step, which produces **vast amounts** of data (tens of gigabytes for all experiments).
+
+⚠️ *Please* consider these limitations when running the experiments ⚠️
+
+### Running the experiments with `runpod.ai`
+- `runpod` allows you to spin up so-called `pods` to execute compute-heavy tasks
+- Go to https://runpod.ai and select `pods` in the navigation
+- In the **Deploy a Pod** page, select **CPU** and choose a configuration with at least **32 vCPUs**
+- As soon as the `pod` is up and running connect to it using SSH
+- Clone this repository using your GitHub-username and -token
+  - ```bash
+    git clone https://<username>:<token>@github.com/ielpo/computer-simulation
+    ```
+- Change the directory to `computer-simulation`
+  - ```bash
+    cd computer-simulation
+    ```
+- Upload the `Netlogo`-installer `NetLogo-7.0.3-64.tgz` to this directory
+  - Either use `scp` or `runpodctl send`
+- Run the `runpod_setup.sh` to get the environment ready
+  - ```bash
+    ./runpod_setup.sh
+    ````
+- After the installation you can execute the experiments
+  - ```bash
+    ./run_experiments.sh --threads <vCPU-count>
+    ```
+- If you want to run specific experiments, you can specify them via an argument
+  - ```bash
+    ./run_experiments.sh --threads <vCPU-count> --experiments "coaching-output-exp3 strategy-exp3"
+    ```
 
 
 # Credits

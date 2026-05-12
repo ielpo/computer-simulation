@@ -37,7 +37,7 @@ Companies invest different amounts in developer training. Developers improve ski
 
 Companies face a strategic trade-off:
 - **Invest in training** to improve developers' skills, leading to higher output over time. However, developers are less productive during training and once they become more skilled, they may leave for another company.
-- **Hire already skilled developers** and avoid investing in training. This carries the risk that developers may leave due to a lack of growth and if too many companies follow this strategy, it raises the question of how delevopers move on from the junior level.
+- **Hire already skilled developers** and avoid investing in training. This carries the risk that developers may leave due to a lack of growth and if too many companies follow this strategy, it raises the question of how developers move on from the junior level.
 
 Model boundaries and scope
 
@@ -417,14 +417,14 @@ The sensitivity analysis is limited to individual IVs in order to reduce the run
 |---|---|---|---|
 | `sensitivity-company-count` | `max-pxcor` / `max-pycor` | (3,3)=15 companies; (9,9)=99 companies; (13,13)=195 companies | 10 |
 | `sensitivity-headcount` | `headcount-mean` | 30, 100 | 10 |
-| `sensitivity-coaching-skill-ceiling` | `coaching-skill-ceiling` | 10000, 20000 | 10 |
+| `sensitivity-coaching-skill-ceiling` | `coaching-skill-ceiling` | 10'000, 20'000 | 10 |
 | `sensitivity-coaching-skill-increase` | `coaching-skill-increase` | 20, 50 | 10 |
 | `sensitivity-working-skill-increase` | `working-skill-increase` | 1, 2 | 10 |
 | `sensitivity-skill-decay-rate` | `skill-decay-rate` | 0.1, 0.2, 0.3, 0.4, 0.5 | 10 |
 | `sensitivity-leaving-threshold` | `leaving-threshold` | 25, 60 | 10 |
 | `sensitivity-working-turnover-increase` | `working-turnover-increase` | 0.15, 0.30 | 10 |
 | `sensitivity-coaching-turnover-decrease` | `coaching-turnover-decrease` | 1, 5 | 10 |
-| `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1000, 5000 | 10 |
+| `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1'000, 5'000 | 10 |
 
 The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0` which serves as the unemployment pool) and a variable number of developers (turtles). Each tick corresponds to one working day, with a year being 100 days.
 
@@ -575,7 +575,7 @@ Key outputs produced
 | Variable                       | From | To    | Step |
 | ------------------------------ | ---- | ----- | ---- |
 | `strategy-review-interval`     | 50   | 500   | 50   |
-| `coaching-skill-ceiling`       | 2000 | 20000 | 4000 |
+| `coaching-skill-ceiling`       | 2'000 | 20'000 | 4'000 |
 | `diminishing-returns-coaching` | true | false | -    |
 
 ## Running the experiments

@@ -21,7 +21,7 @@ Then you can run experiments with
 uv run run_experiments.py
 ```
 
-The program lists the experiments and allows to select which ones to run.
+The program lists the experiments and allows you to select which ones to run.
 
 # Modeling
 
@@ -36,7 +36,7 @@ Purpose: Explore how company-level training of developers affects firm performan
 Companies invest different amounts in developer training. Developers improve skills and may move between companies, spreading knowledge across the ecosystem.
 
 Companies face a strategic trade-off:
-- **Invest in training** to improve developers skills, leading to higher output over time. However, developers are less productive during training and once they become more skilled, they may leave for another company.
+- **Invest in training** to improve developers' skills, leading to higher output over time. However, developers are less productive during training and once they become more skilled, they may leave for another company.
 - **Hire already skilled developers** and avoid investing in training. This carries the risk that developers may leave due to a lack of growth and if too many companies follow this strategy, it raises the question of how delevopers move on from the junior level.
 
 Model boundaries and scope
@@ -47,18 +47,18 @@ Model boundaries and scope
 Model components
 
 - Developer (mobile agent): age, skill level, propensity to leave company.
-- Company (immobile agent): target headcount, hiring threshold, training rate, per-tick revenue and cumulative revenue, hiring and training strategy.
+- Company (immobile agent): target headcount, hiring threshold, coaching rate, per-tick revenue and cumulative revenue, hiring and training strategy.
 - Unemployed pool: place for developers to stay if not assigned to a company, skill stagnates in this state.
 
-| Behavior | Agent | Description |
-|---|---|---|
-| Determine activity | Company | Each firm has a policy on training, this can be affected by other factors and is updated at regular intervals. |
-| Work | Developer | Execute work for the company, increases the revenue depending on the skill level. Decreases worker satisfaction, slightly increases skill level. |
-| Train | Developer | Improves the skill level and worker satifsaction. |
-| Skill decay | Developer | Represents technological developments, skills get outdated over time. |
+| Behavior | Agent | Description                                                                                                                                                                                                                                          |
+|---|---|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Determine activity | Company | Each firm has a policy on training, this can be affected by other factors and is updated at regular intervals.                                                                                                                                       |
+| Work | Developer | Execute work for the company, increases the revenue depending on the skill level. Decreases worker satisfaction, slightly increases skill level.                                                                                                     |
+| Train | Developer | Improves the skill level and worker satisfaction.                                                                                                                                                                                                   |
+| Skill decay | Developer | Represents technological developments, skills get outdated over time.                                                                                                                                                                                |
 | Turnover | Developer | Developers can decide to leave their company and either join the unemployed pool or another company. The company keeps track of the skill level and age of employees that left, this influences the propensity to leave of the remaining developers. |
-| Hiring | Company | Companies hire from the unemployed pool until target headcount, selecting candidates whose skill meets their criteria. |
-| Strategy update | Company | At configured intervals firms may adjust criteria in response to vacancy pressure, performance, and market situation. |
+| Hiring | Company | Companies hire from the unemployed pool until target headcount, selecting candidates whose skill meets their criteria.                                                                                                                               |
+| Strategy update | Company | At configured intervals firms may adjust criteria in response to vacancy pressure, performance, and market situation.                                                                                                                                |
 
 Temporal and spatial scales
 
@@ -548,7 +548,7 @@ Key outputs produced
 | `skill-decay-rate`      | 0.0  | 0.2 | 0.05 |
 
 ### Strategy and strategy reviews
-- How are `revenue` and `retention` affected from adaptive hiring and coaching strategies?
+- How are `revenue` and `retention` affected by adaptive hiring and coaching strategies?
 - How often should companies revisit their `coaching strategy` and `hiring strategy`
 
 1. When developers *propensity to leave* is *less*/*more* influenced by receiving `coaching` or `working` 
@@ -599,7 +599,7 @@ Running the experiments logs the state of every company at every step, which pro
   - ```bash
     cd computer-simulation
     ```
-- Upload the `Netlogo`-installer `NetLogo-7.0.3-64.tgz` to this directory
+- Upload the `NetLogo`-installer `NetLogo-7.0.3-64.tgz` to this directory
   - Either use `scp` or `runpodctl send`
 - Run the `runpod_setup.sh` to get the environment ready
   - ```bash

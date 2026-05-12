@@ -486,14 +486,14 @@ Refer to `sensitivity_analysis.ipynb` for implementation details.
 
 Average value over all ticks, excluding a stabilization time of 500 ticks. Indices refer to positions in the corresponding NetLogo reporter list.
 
-| Dependent variable | Source reporter | Index | Description |
-|---|---|---|---|
-| `cumulative_revenue` | `dependent-variables` | 0 | Firm cumulative revenue (mean across companies) |
-| `coaching_rate` | `dependent-variables` | 1 | Coaching rate at final tick (mean across companies) |
-| `vacancies` | `dependent-variables` | 2 | Open vacancies (mean across companies) |
-| `propensity_to_leave` | `dependent-variables` | 3 | Mean propensity-to-leave of employees (mean across companies) |
-| `skill_mean` | `skill-distribution` | 0 | Mean skill level across all employed developers |
-| `unemployment_rate` | `unemployment-rate` | - | Fraction of all agents unemployed (enabled via `INCLUDE_UNEMPLOYMENT = True`) |
+| Dependent variable | Source reporter | Index | Description                                                                       |
+|---|---|---|-----------------------------------------------------------------------------------|
+| `cumulative_revenue` | `dependent-variables` | 0 | Firm cumulative revenue (mean across companies)                                   |
+| `coaching_rate` | `dependent-variables` | 1 | Coaching rate at final tick (mean across companies)                               |
+| `vacancies` | `dependent-variables` | 2 | Open vacancies (mean across companies)                                            |
+| `propensity_to_leave` | `dependent-variables` | 3 | Mean propensity-to-leave of employees (mean across companies)                     |
+| `skill_mean` | `skill-distribution` | 0 | Mean skill level across all employed developers                                   |
+| `unemployment_rate` | `unemployment-rate` | - | Fraction of all developers unemployed (enabled via `INCLUDE_UNEMPLOYMENT = True`) |
 
 Key outputs produced
 

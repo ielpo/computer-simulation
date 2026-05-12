@@ -1,6 +1,19 @@
 # Using Computer Simulations for Understanding Complex Systems
 NetLogo implementation for the course Using Computer Simulations for Understanding Complex Systems.
 
+## Project Structure
+
+```
+simulation.nlogox           # NetLogo model
+run_experiments.py          # CLI helper to run BehaviorSpace experiments
+run_experiments.sh          # Shell wrapper for run_experiments.py
+runpod_setup.sh             # Environment setup script for RunPod
+sensitivity_analysis.ipynb  # Sensitivity analysis notebook
+experiment_analysis.ipynb   # Experiment results analysis notebook
+experiments/                # BehaviorSpace CSV exports and plots
+pyproject.toml              # Python project config (uv)
+```
+
 ## Development
 - NetLogo version 7.0.3
 - uv Python dependency management tool, [docs.astral.sh/uv](https://docs.astral.sh/uv/#installation)
@@ -23,9 +36,9 @@ uv run run_experiments.py
 
 The program lists the experiments and allows you to select which ones to run.
 
-# Modeling
+## Modeling
 
-## Conceptual Model
+### Conceptual Model
 
 This model explores the effects related to software developer training on company performance within an ecosystem of competing software companies.
 
@@ -81,9 +94,9 @@ Assumptions and limitations
 - Companies are structurally homogeneous except for stochastic initialization: company heterogeneity beyond these draws is not modelled.
 - Behavior of agents: developers differ only by individual state variables. Preferences, network effects, and peer effects are abstracted.
 
-## Simulation Model Specification
+### Simulation Model Specification
 
-### Elements and Structure
+#### Elements and Structure
 
 **Entities and State**
 
@@ -134,7 +147,7 @@ Companies live on patches (one company per patch except `patch 0 0` which is the
 - Agent-level: `skill-mean`, `turnover-rate` and distributions (skills, age, coaching-rate) used in plots.
 - BehaviorSpace reporters: aggregated metrics such as `revenue-mean`, `skill-mean`, `revenue-at-coaching-rate`, `skill-at-coaching-rate`, `headcount-at-coaching-rate`.
 
-### Pseudocode
+#### Pseudocode
 
 ```
 ===============================
@@ -314,9 +327,9 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
     - mean propensity-to-leave of developers
 ```
 
-## Implementation
+### Implementation
 
-### Variables
+#### Variables
 
 **Developer Variables**
 
@@ -380,9 +393,9 @@ Function dependent-variables -> [revenue, coaching, vacancies, propensity]:
 | `coaching-turnover-decrease`   | Decrease in turnover probability when coaching                    |
 
 
-# Experiments
+## Experiments
 
-## Data Format
+### Data Format
 
 BehaviorSpace exports one row every tick. Each row has the following columns:
 
@@ -406,7 +419,7 @@ Example with three companies at tick 48:
 ,"48","[[138878 132572 125798] [5 3 7] [2 0 5] [12.3 8.5 15.1]]","[4424.652951096122 2340030.511432749 4430]","0.0016835016835016834"
 ```
 
-## Sensitivity Analysis
+### Sensitivity Analysis
 
 All sensitivity experiments use: `repetitions=10`, `timeLimit=8000 ticks`, metrics collected every tick.
 Reporters collected per run: `dependent-variables`, `skill-distribution`, `unemployment-rate`.
@@ -417,18 +430,18 @@ The sensitivity analysis is limited to individual IVs in order to reduce the run
 |---|---|---|---|
 | `sensitivity-company-count` | `max-pxcor` / `max-pycor` | (3,3)=15 companies; (9,9)=99 companies; (13,13)=195 companies | 10 |
 | `sensitivity-headcount` | `headcount-mean` | 30, 100 | 10 |
-| `sensitivity-coaching-skill-ceiling` | `coaching-skill-ceiling` | 10'000, 20'000 | 10 |
+| `sensitivity-coaching-skill-ceiling` | `coaching-skill-ceiling` | 10,000, 20,000 | 10 |
 | `sensitivity-coaching-skill-increase` | `coaching-skill-increase` | 20, 50 | 10 |
 | `sensitivity-working-skill-increase` | `working-skill-increase` | 1, 2 | 10 |
 | `sensitivity-skill-decay-rate` | `skill-decay-rate` | 0.1, 0.2, 0.3, 0.4, 0.5 | 10 |
 | `sensitivity-leaving-threshold` | `leaving-threshold` | 25, 60 | 10 |
 | `sensitivity-working-turnover-increase` | `working-turnover-increase` | 0.15, 0.30 | 10 |
 | `sensitivity-coaching-turnover-decrease` | `coaching-turnover-decrease` | 1, 5 | 10 |
-| `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1'000, 5'000 | 10 |
+| `sensitivity-hiring-threshold-mean` | `hiring-threshold-mean` | 1,000, 5,000 | 10 |
 
 The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0` which serves as the unemployment pool) and a variable number of developers (turtles). Each tick corresponds to one working day, with a year being 100 days.
 
-### Developers
+#### Developers
 
 | Model Parameter | Description | Baseline Value | Tested Values | Justification |
 |---|---|---|---|---|
@@ -436,19 +449,19 @@ The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0`
 | `headcount-mean` | Mean target employees per company (initialized from a normal distribution). | 30 | 30, 100 | A minimum headcount is required for coaching dynamics to emerge. At very low headcounts, individual departures cause disproportionate disruption. At very high headcounts, individual skill differences are averaged out. Baseline of 30 represents a mid-sized software team. |
 | `headcount-variance` | Standard deviation of company headcounts. | 10% | 10%  | A variance of 0 initializes all companies identically, isolating other effects. Increasing variance introduces heterogeneity in company size, reflecting real-world variation in team sizes. High variance may cause model degeneracy if some companies initialize with zero or negative headcount. |
 
-### Coaching and Skill Dynamics
+#### Coaching and Skill Dynamics
 
 | Model Parameter | Description | Baseline Value | Tested Values | Justification |
 |---|---|---|---|---|
 | `diminishing-returns-coaching` (switch) | If ON, coaching gains diminish as skill approaches the ceiling; if OFF, gains are linear. | ON | ON | This switch determines whether coaching becomes less effective as developers approach the skill ceiling. With diminishing returns ON, companies face a strategic choice between investing in high-skill vs. low-skill developers. Comparing ON vs. OFF isolates this non-linearity. |
-| `coaching-skill-ceiling` | Maximum skill achievable via coaching; caps working skill gains. | 10'000 | 10'000, 20'000 | The ceiling defines the upper bound of the skill distribution. A low ceiling compresses the skill range, reducing the incentive to coach. A high ceiling allows large skill differentials, amplifying the tension between coaching investment and turnover risk. Must remain above realistic initial skill values (~7,200 for a 64-year-old developer). |
+| `coaching-skill-ceiling` | Maximum skill achievable via coaching; caps working skill gains. | 10,000 | 10,000, 20,000 | The ceiling defines the upper bound of the skill distribution. A low ceiling compresses the skill range, reducing the incentive to coach. A high ceiling allows large skill differentials, amplifying the tension between coaching investment and turnover risk. Must remain above realistic initial skill values (~7,200 for a 64-year-old developer). |
 | `coaching-skill-increase` | Skill points gained per coaching tick (pre-adjustment). | 20 | 20, 50 | Controls the speed of human capital accumulation. Low values make coaching investment slow and potentially unattractive given turnover risk. High values make even short coaching sessions highly impactful, potentially destabilizing the market if developers quickly outgrow their company's hiring threshold. |
 | `working-skill-increase` | Skill gained per working tick (capped by ceiling). | 1 | 1, 2 | Represents on-the-job learning during productive work. A value of 0 means only coaching builds skill. A high value makes working almost as skill-building as coaching, reducing the incentive to invest in formal coaching sessions. |
 | `skill-decay` (switch) | If ON, uncoached developers lose skill after the threshold period. | ON | ON | Skill decay motivates recurring coaching investment. Without decay, a single investment in coaching has permanent returns; with decay, coaching becomes an ongoing cost. This switch isolates whether the decay mechanism is necessary for observed long-run dynamics. |
 | `skill-decay-threshold` | Ticks without coaching before decay starts (ticks-per-year=100 → 300 = 3 years). | 300 | 300 (3 yr) | A short threshold forces companies to coach frequently or risk skill erosion. A long threshold makes decay a background effect. The boundary at 100 ticks (1 year) tests whether annual coaching is required; at 800 ticks, decay becomes nearly irrelevant over a typical simulation run. |
 | `skill-decay-rate` | Annual decay rate applied per tick (e.g., 0.1 = 10%/yr). | 0.1 | 0.05, 0.10 | Controls the severity of skill obsolescence. Low rates make decay a minor background effect; high rates force companies into aggressive coaching schedules or accept significant skill erosion. At 0.20, a developer losing no coaching for 5 years would retain only ~33% of their peak skill. |
 
-### Turnover Behavior
+#### Turnover Behavior
 
 | Model Parameter | Description | Baseline Value | Tested Values | Justification |
 |---|---|---|---|---|
@@ -456,13 +469,13 @@ The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0`
 | `working-turnover-increase` | Increase to `propensity-to-leave` per working tick. | 0.15 | 0.15, 0.30 | Controls the rate at which developers become dissatisfied during productive (non-coaching) periods. A value of 0 means working does not increase turnover propensity, eliminating the core tension of the model. A value of 0.50 means a developer reaches the baseline threshold of 25 after only 50 consecutive working ticks (~0.5 years). |
 | `coaching-turnover-decrease` | Decrease to `propensity-to-leave` per coaching tick (retention effect). | 1.00 | 1.00, 5.00 | Controls the effectiveness of coaching as a retention tool. At 0, coaching has no retention effect (only skill effect). At high values, a single coaching day can neutralize several working days of accumulated dissatisfaction, making coaching extremely powerful for retention. The ratio of `working-turnover-increase` to `coaching-turnover-decrease` determines the coaching-to-working balance needed to retain developers. |
 
-### Company Strategy
+#### Company Strategy
 
 | Model Parameter | Description | Baseline Value | Tested Values | Justification |
 |---|---|---|---|---|
-| `hiring-threshold-mean` | Mean hiring skill threshold across companies (initialized from a normal distribution). | 1'700 | 1'000, 5'000 | The hiring threshold determines initial selectivity in the labor market. A threshold of 1,700 sp corresponds roughly to a developer with 2–3 years of experience under the initial skill formula. Very low thresholds lead to rapid fill of vacancies at the cost of low initial team quality; very high thresholds risk persistent vacancies. |
+| `hiring-threshold-mean` | Mean hiring skill threshold across companies (initialized from a normal distribution). | 1,700 | 1,000, 5,000 | The hiring threshold determines initial selectivity in the labor market. A threshold of 1,700 sp corresponds roughly to a developer with 2–3 years of experience under the initial skill formula. Very low thresholds lead to rapid fill of vacancies at the cost of low initial team quality; very high thresholds risk persistent vacancies. |
 | `hiring-threshold-variance` | Standard deviation of hiring thresholds across companies. | 300 | 300 | Zero variance initializes all companies with identical thresholds; nonzero variance creates market niches (e.g., companies competing for different talent segments). High variance may lead some companies to initialize with thresholds exceeding the available labor pool, creating persistent vacancies from the start. |
-| `hiring-threshold-ceiling` | Upper bound on dynamic hiring thresholds. | 15'000 sp | 15'000 sp | This ceiling constrains dynamic strategy adaptation. A low ceiling means all companies converge toward the same maximum selectivity. A ceiling close to `coaching-skill-ceiling` allows companies to hire only the most skilled developers available in the market, potentially leaving many vacancies unfilled. |
+| `hiring-threshold-ceiling` | Upper bound on dynamic hiring thresholds. | 15,000 sp | 15,000 sp | This ceiling constrains dynamic strategy adaptation. A low ceiling means all companies converge toward the same maximum selectivity. A ceiling close to `coaching-skill-ceiling` allows companies to hire only the most skilled developers available in the market, potentially leaving many vacancies unfilled. |
 | `dynamic-hiring-strategy` (switch) | If ON, companies adjust hiring thresholds based on vacancy rates. | ON | ON | This switch enables adaptive company behavior. With OFF, hiring thresholds remain at their initialized values throughout the simulation. Comparing ON vs. OFF reveals whether strategic adaptation improves company performance and market stability, or whether it leads to emergent arms races or race-to-the-bottom dynamics. |
 | `strategy-review-interval` | Ticks between strategy reviews. | 50 ticks (0.5 years) | 50 | Controls how frequently companies can adapt their hiring strategy. Shorter intervals allow rapid adaptation but may cause oscillatory behavior. Longer intervals represent more inertial organizations. |
 | `vacancy-rate-cutoff` | Vacancy rate above which companies lower hiring thresholds. | 0.05 (5%) | 0.05| This parameter sets the company's tolerance for understaffing. At 0.01, even a single vacancy in a 100-person team triggers a threshold reduction; at 0.40, companies accept 40% vacancy rates before relaxing hiring standards. Low cutoffs create aggressive downward pressure on hiring thresholds; high cutoffs let vacancies persist longer. |
@@ -470,7 +483,7 @@ The model contains 99 companies (patches on a 10×10 grid, excluding `patch 0 0`
 | `vacancy-rate-pressure` (switch) | If ON, effective coaching rate is reduced proportionally to vacancy rate. | OFF | OFF | This switch captures the operational reality that understaffed teams cannot afford to take developers off productive work for coaching. With OFF, coaching rates are not affected by vacancies, testing whether observed dynamics depend on this constraint. Comparing ON vs. OFF reveals the interaction between staffing and training investment. |
 
 
-### Evaluation
+#### Evaluation
 
 Refer to `sensitivity_analysis.ipynb` for implementation details.
 
@@ -513,13 +526,13 @@ Key outputs produced
 
 
 
-## Experiments related to research questions
-### General setup for experiments
+### Experiments related to research questions
+#### General setup for experiments
 - Each experiment is conducted with a **subset** of variables that are *changed* during the different runs of an experiment. Each experiment in the following chapters describes the variables that are changed with the specified *range*.
 
 - Every experiment is executed for a total of $8000$ steps which corresponds to a duration of $80$ years.
 
-### Basic analysis on coaching rate and output
+#### Basic analysis on coaching rate and output
 - What is the ideal *coaching rate* for a company to adapt 
 - Under which conditions are *turnovers* in a company minimised
   
@@ -527,27 +540,27 @@ Key outputs produced
 2. When `coaching` and `working` decrease and increase the propensity to leave *more*/*less* for different *thresholds to leave* a company?
 3. When `skill` decays when a developer can *not*/*more often* participate in coachings and how this affects the *propensity to leave* a company?
 
-#### Changing variables experiment 1
+##### Changing variables experiment 1
 | Variable                  | From | To  | Step |
 | ------------------------- | ---- | --- | ---- |
 | `coaching-skill-increase` | 0    | 100 | 20   |
 | `working-skill-increase`  | 0    | 10  | 2    |
 | `max-coaching-rate`       | 0    | 20  | 5    |
 
-#### Changing variables experiment 2
+##### Changing variables experiment 2
 | Variable                     | From | To  | Step |
 | ---------------------------- | ---- | --- | ---- |
 | `working-turnover-increase`  | 0.0  | 0.5 | 0.1  |
 | `coaching-turnover-decrease` | 0.0  | 5.0 | 1    |
 | `leaving-threshold`          | 10   | 100 | 50   |
 
-#### Changing variables experiment 3
+##### Changing variables experiment 3
 | Variable                | From | To  | Step |
 | ----------------------- | ---- | --- | ---- |
 | `skill-decay-threshold` | 100  | 500 | 100  |
 | `skill-decay-rate`      | 0.0  | 0.2 | 0.05 |
 
-### Strategy and strategy reviews
+#### Strategy and strategy reviews
 - How are `revenue` and `retention` affected by adaptive hiring and coaching strategies?
 - How often should companies revisit their `coaching strategy` and `hiring strategy`
 
@@ -555,7 +568,7 @@ Key outputs produced
 2. When the companies have *more*/*less* variance in `headcount`, `hiring threshold` as well as `vacancy rate` cutoff?
 3. When `coaching` is limited *more*/*less*?
 
-#### Changing variables experiment 1
+##### Changing variables experiment 1
 | Variable                     | From | To  | Step |
 | ---------------------------- | ---- | --- | ---- |
 | `strategy-review-interval`   | 50   | 500 | 100  |
@@ -563,7 +576,7 @@ Key outputs produced
 | `coaching-turnover-decrease` | 1    | 5   | 2    |
 | `leaving-threshold`          | 10   | 100 | 50   |
 
-#### Changing variables experiment 2
+##### Changing variables experiment 2
 | Variable                    | From | To   | Step |
 | --------------------------- | ---- | ---- | ---- |
 | `strategy-review-interval`  | 50   | 500  | 100  |
@@ -571,14 +584,14 @@ Key outputs produced
 | `hiring-threshold-variance` | 0    | 500  | 200  |
 | `vacancy-rate-cutoff`       | 0.00 | 1.00 | 0.2 |
 
-#### Changing variables experiment 3
-| Variable                       | From | To    | Step |
-| ------------------------------ | ---- | ----- | ---- |
-| `strategy-review-interval`     | 50   | 500   | 50   |
-| `coaching-skill-ceiling`       | 2'000 | 20'000 | 4'000 |
-| `diminishing-returns-coaching` | true | false | -    |
+##### Changing variables experiment 3
+| Variable                       | From  | To     | Step  |
+| ------------------------------ | ----- | ------ | ----- |
+| `strategy-review-interval`     | 50    | 500    | 50    |
+| `coaching-skill-ceiling`       | 2,000 | 20,000 | 4,000 |
+| `diminishing-returns-coaching` | true  | false  | -     |
 
-## Running the experiments
+### Running the experiments
 The two experiments with a total of six sub-experiments take *significant* **time** and **resources** to run.
 Especially the experiments with more than 100 runs run on an average notebook for up to **24 hours**!
 
@@ -586,36 +599,36 @@ Running the experiments logs the state of every company at every step, which pro
 
 ⚠️ *Please* consider these limitations when running the experiments ⚠️
 
-### Running the experiments with `runpod.ai`
+#### Running the experiments with `runpod.ai`
 - `runpod` allows you to spin up so-called `pods` to execute compute-heavy tasks
 - Go to https://runpod.ai and select `pods` in the navigation
 - In the **Deploy a Pod** page, select **CPU** and choose a configuration with at least **32 vCPUs**
 - As soon as the `pod` is up and running connect to it using SSH
 - Clone this repository using your GitHub-username and -token
-  - ```bash
+  ```bash
     git clone https://<username>:<token>@github.com/ielpo/computer-simulation
     ```
 - Change the directory to `computer-simulation`
-  - ```bash
+  ```bash
     cd computer-simulation
     ```
 - Upload the `NetLogo`-installer `NetLogo-7.0.3-64.tgz` to this directory
   - Either use `scp` or `runpodctl send`
 - Run the `runpod_setup.sh` to get the environment ready
-  - ```bash
+  ```bash
     ./runpod_setup.sh
-    ````
+    ```
 - After the installation you can execute the experiments
-  - ```bash
+  ```bash
     ./run_experiments.sh --threads <vCPU-count>
     ```
 - If you want to run specific experiments, you can specify them via an argument
-  - ```bash
+  ```bash
     ./run_experiments.sh --threads <vCPU-count> --experiments "coaching-output-exp3 strategy-exp3"
     ```
 
 
-# Credits
+## Credits
 Developed by
 - Güntensperger Raphael
 - Ielpo Gianluca

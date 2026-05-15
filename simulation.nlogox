@@ -347,15 +347,66 @@ to profile
 end
 ]]></code>
   <widgets>
-    <view x="170" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="0" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="9" updateMode="1" maxPxcor="9" minPxcor="0"></view>
-    <monitor x="1030" precision="1" y="10" height="60" fontSize="11" width="120" display="Mean Skill Level">mean [skill-level] of turtles</monitor>
-    <monitor x="910" precision="1" y="10" height="60" fontSize="11" width="110" display="Mean Age">mean
-      [age] of turtles</monitor>
-    <monitor x="800" precision="17" y="10" height="60" fontSize="11" width="100" display="Unemployed">count turtles with [xcor = 0 and ycor = 0]</monitor>
-    <monitor x="685" precision="17" y="10" height="60" fontSize="11" width="105" display="Worker Count">count turtles</monitor>
+    <view x="225" wrappingAllowedX="false" y="15" frameRate="30.0" minPycor="0" height="504" showTickCounter="true" patchSize="50.0" fontSize="10" wrappingAllowedY="false" width="504" tickCounterLabel="ticks" maxPycor="9" updateMode="1" maxPxcor="9" minPxcor="0"></view>
     <button x="20" y="240" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="125" display="Run Simulation">go</button>
     <button x="20" y="295" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Step Simulation">go</button>
-    <plot x="685" autoPlotX="false" yMax="1.0" autoPlotY="true" yAxis="Companies" y="80" xMin="0.0" height="185" legend="false" xMax="1.0" yMin="0.0" width="465" xAxis="Total Skill (Revenue)" display="Skill Distribution Companies">
+    <button x="20" y="180" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
+    <button x="30" y="410" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">profile</button>
+    <note x="1295" y="15" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Initialization Parameters</note>
+    <slider x="1295" step="10" y="695" max="800" width="250" display="skill-decay-threshold" height="50" min="100" direction="Horizontal" default="300.0" variable="skill-decay-threshold" units="ticks"></slider>
+    <slider x="1295" step="0.005" y="755" max="0.2" width="250" display="skill-decay-rate" height="50" min="0" direction="Horizontal" default="0.1" variable="skill-decay-rate"></slider>
+    <switch x="1295" y="645" height="40" on="true" variable="skill-decay" width="250" display="skill-decay"></switch>
+    <slider x="1295" step="1" y="575" max="10" width="250" display="working-skill-increase" height="50" min="0" direction="Horizontal" default="1.0" variable="working-skill-increase" units="sp"></slider>
+    <slider x="1295" step="1" y="515" max="100" width="250" display="coaching-skill-increase" height="50" min="0" direction="Horizontal" default="20.0" variable="coaching-skill-increase" units="sp"></slider>
+    <slider x="1295" step="100" y="455" max="20000" width="250" display="coaching-skill-ceiling" height="50" min="2000" direction="Horizontal" default="10000.0" variable="coaching-skill-ceiling" units="sp"></slider>
+    <switch x="1295" y="405" height="40" on="true" variable="diminishing-returns-coaching" width="250" display="diminishing-returns-coaching"></switch>
+    <note x="1295" y="370" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Coaching and Skill</note>
+    <switch x="1560" y="300" height="40" on="false" variable="vacancy-rate-pressure" width="250" display="vacancy-rate-pressure"></switch>
+    <slider x="1560" step="0.05" y="585" max="0.5" width="250" display="working-turnover-increase" height="50" min="0" direction="Horizontal" default="0.15" variable="working-turnover-increase"></slider>
+    <slider x="1560" step="0.05" y="645" max="5" width="250" display="coaching-turnover-decrease" height="50" min="0" direction="Horizontal" default="1.0" variable="coaching-turnover-decrease"></slider>
+    <slider x="1560" step="1" y="525" max="100" width="250" display="leaving-threshold" height="50" min="0" direction="Horizontal" default="25.0" variable="leaving-threshold"></slider>
+    <note x="1560" y="480" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Developer Behavior</note>
+    <note x="1560" y="15" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Company Strategy</note>
+    <slider x="1560" step="1" y="350" max="20" width="250" display="max-coaching-rate" height="50" min="0" direction="Horizontal" default="15.0" variable="max-coaching-rate"></slider>
+    <slider x="1560" step="100" y="230" max="15000" width="250" display="hiring-threshold-ceiling" height="50" min="0" direction="Horizontal" default="13000.0" variable="hiring-threshold-ceiling" units="sp"></slider>
+    <slider x="1560" step="0.01" y="170" max="1" width="250" display="vacancy-rate-cutoff" height="50" min="0" direction="Horizontal" default="0.05" variable="vacancy-rate-cutoff"></slider>
+    <switch x="1560" y="120" height="40" on="true" variable="dynamic-hiring-strategy" width="250" display="dynamic-hiring-strategy"></switch>
+    <slider x="1560" step="10" y="50" max="500" width="250" display="strategy-review-interval" height="50" min="10" direction="Horizontal" default="50.0" variable="strategy-review-interval" units="ticks"></slider>
+    <slider x="1295" step="50" y="230" max="500" width="250" display="hiring-threshold-variance" height="50" min="0" direction="Horizontal" default="300.0" variable="hiring-threshold-variance"></slider>
+    <slider x="1295" step="100" y="170" max="10000" width="250" display="hiring-threshold-mean" height="50" min="0" direction="Horizontal" default="1700.0" variable="hiring-threshold-mean"></slider>
+    <slider x="1295" step="1" y="110" max="100" width="250" display="headcount-variance" height="50" min="0" direction="Horizontal" default="10.0" variable="headcount-variance" units="%"></slider>
+    <slider x="1295" step="1" y="50" max="400" width="250" display="headcount-mean" height="50" min="1" direction="Horizontal" default="30.0" variable="headcount-mean"></slider>
+    <monitor x="775" precision="17" y="15" height="60" fontSize="11" width="105" display="Worker Count">count turtles</monitor>
+    <plot x="775" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Workers" y="280" xMin="0.0" height="190" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Skill Level" display="Skill Level Distribution Workers">
+      <setup></setup>
+      <update>clear-plot
+        set-plot-x-range min [skill-level] of turtles (max [skill-level] of turtles) + 1
+        set-histogram-num-bars 20</update>
+      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
+        <setup></setup>
+        <update>histogram [skill-level] of turtles</update>
+      </pen>
+    </plot>
+    <plot x="775" autoPlotX="false" yMax="50.0" autoPlotY="true" yAxis="Workers" y="480" xMin="20.0" height="200" legend="false" xMax="66.0" yMin="0.0" width="465" xAxis="Age" display="Age Distribution">
+      <setup></setup>
+      <update>clear-plot
+        set-histogram-num-bars 46
+</update>
+      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
+        <setup></setup>
+        <update>histogram [round age] of turtles</update>
+      </pen>
+    </plot>
+    <plot x="775" autoPlotX="true" yMax="1.0" autoPlotY="true" yAxis="Companies" y="690" xMin="0.0" height="200" legend="false" xMax="10.1" yMin="0.0" width="465" xAxis="Coaching Rate" display="Coaching Rate Distribution">
+      <setup></setup>
+      <update>clear-plot
+set-histogram-num-bars 11</update>
+      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
+        <setup></setup>
+        <update>histogram [round effective-coaching-rate] of patches with [self != patch 0 0]</update>
+      </pen>
+    </plot>
+    <plot x="775" autoPlotX="false" yMax="1.0" autoPlotY="true" yAxis="Companies" y="85" xMin="0.0" height="185" legend="false" xMax="1.0" yMin="0.0" width="465" xAxis="Total Skill (Revenue)" display="Skill Distribution Companies">
       <setup></setup>
       <update>clear-plot
 let target-patches patches with [self != patch 0 0]
@@ -366,44 +417,30 @@ set-histogram-num-bars 20</update>
         <update>histogram [total-skill] of patches with [self != patch 0 0]</update>
       </pen>
     </plot>
-    <plot x="685" autoPlotX="true" yMax="1.0" autoPlotY="true" yAxis="Companies" y="685" xMin="0.0" height="200" legend="false" xMax="10.1" yMin="0.0" width="465" xAxis="Coaching Rate" display="Coaching Rate Distribution">
+    <monitor x="890" precision="17" y="15" height="60" fontSize="11" width="100" display="Unemployed">count turtles with [xcor = 0 and ycor = 0]</monitor>
+    <monitor x="1000" precision="1" y="15" height="60" fontSize="11" width="110" display="Mean Age">mean
+      [age] of turtles</monitor>
+    <monitor x="1120" precision="1" y="15" height="60" fontSize="11" width="120" display="Mean Skill Level">mean [skill-level] of turtles</monitor>
+    <plot x="260" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Workers" y="570" xMin="0.0" height="200" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Turnover Probability" display="Propensity to Leave of  Workers">
       <setup></setup>
       <update>clear-plot
-set-histogram-num-bars 11</update>
+set-plot-x-range min [round propensity-to-leave] of turtles (max [round propensity-to-leave] of turtles) + 1
+set-histogram-num-bars 30</update>
       <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
         <setup></setup>
-        <update>histogram [round effective-coaching-rate] of patches with [self != patch 0 0]</update>
+        <update>histogram [round propensity-to-leave] of turtles</update>
       </pen>
     </plot>
-    <plot x="685" autoPlotX="false" yMax="50.0" autoPlotY="true" yAxis="Workers" y="475" xMin="20.0" height="200" legend="false" xMax="66.0" yMin="0.0" width="465" xAxis="Age" display="Age Distribution">
+    <plot x="20" autoPlotX="true" yMax="1.0" autoPlotY="true" y="570" xMin="0.0" height="130" legend="false" xMax="10.0" yMin="0.0" width="230" display="Unemployment | %">
       <setup></setup>
-      <update>clear-plot
-        set-histogram-num-bars 46
-</update>
-      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
-        <setup></setup>
-        <update>histogram [round age] of turtles</update>
-      </pen>
-    </plot>
-    <plot x="685" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Workers" y="275" xMin="0.0" height="190" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Skill Level" display="Skill Level Distribution Workers">
-      <setup></setup>
-      <update>clear-plot
-        set-plot-x-range min [skill-level] of turtles (max [skill-level] of turtles) + 1
-        set-histogram-num-bars 20</update>
-      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
-        <setup></setup>
-        <update>histogram [skill-level] of turtles</update>
-      </pen>
-    </plot>
-    <plot x="445" autoPlotX="true" yMax="1.0" autoPlotY="true" y="580" xMin="0.0" height="130" legend="false" xMax="10.0" yMin="0.0" width="230" display="Unemployment | %">
-      <setup></setup>
-      <update></update>
+      <update>set-plot-x-range (ticks - 100) ticks</update>
       <pen interval="1.0" mode="0" display="default" color="-16777216" legend="true">
         <setup></setup>
         <update>plot ((count turtles-on patch 0 0) / count turtles) * 100</update>
       </pen>
     </plot>
-    <plot x="205" autoPlotX="false" yMax="1.0" autoPlotY="true" yAxis="Companies" y="925" xMin="0.0" height="185" legend="false" xMax="8000.0" yMin="0.0" width="465" xAxis="Hiring Threshold" display="Hiring Threshold Distribution">
+    <monitor x="65" precision="2" y="715" height="60" fontSize="11" width="140" display="Propensity to Leave">mean [propensity-to-leave] of turtles</monitor>
+    <plot x="260" autoPlotX="false" yMax="1.0" autoPlotY="true" yAxis="Companies" y="780" xMin="0.0" height="185" legend="false" xMax="8000.0" yMin="0.0" width="465" xAxis="Hiring Threshold" display="Hiring Threshold Distribution">
       <setup></setup>
       <update>clear-plot
 let target-patches patches with [self != patch 0 0]
@@ -414,44 +451,7 @@ set-histogram-num-bars 40</update>
         <update>histogram [hiring-threshold] of patches with [self != patch 0 0]</update>
       </pen>
     </plot>
-    <plot x="205" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Workers" y="715" xMin="0.0" height="200" legend="false" xMax="10.0" yMin="0.0" width="465" xAxis="Turnover Probability" display="Turnover Probability Distribution Workers">
-      <setup></setup>
-      <update>clear-plot
-set-plot-x-range min [round propensity-to-leave] of turtles (max [round propensity-to-leave] of turtles) + 1
-set-histogram-num-bars 30</update>
-      <pen interval="1.0" mode="1" display="default" color="-16777216" legend="true">
-        <setup></setup>
-        <update>histogram [round propensity-to-leave] of turtles</update>
-      </pen>
-    </plot>
-    <note x="165" y="520" backgroundDark="0" fontSize="12" width="510" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Patch color proportional to vacancies: white is no vacancies, black is only vacancies</note>
-    <button x="20" y="180" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="125" display="Initialize Simulation">setup</button>
-    <monitor x="215" precision="2" y="605" height="60" fontSize="11" width="140" display="Propensity to Leave">mean [propensity-to-leave] of turtles</monitor>
-    <slider x="1185" step="1" y="50" max="400" width="250" display="headcount-mean" height="50" min="1" direction="Horizontal" default="30.0" variable="headcount-mean"></slider>
-    <note x="1185" y="15" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Initialization Parameters</note>
-    <slider x="1185" step="1" y="110" max="100" width="250" display="headcount-variance" height="50" min="0" direction="Horizontal" default="10.0" variable="headcount-variance" units="%"></slider>
-    <slider x="1185" step="100" y="170" max="10000" width="250" display="hiring-threshold-mean" height="50" min="0" direction="Horizontal" default="1700.0" variable="hiring-threshold-mean"></slider>
-    <slider x="1185" step="50" y="230" max="500" width="250" display="hiring-threshold-variance" height="50" min="0" direction="Horizontal" default="300.0" variable="hiring-threshold-variance"></slider>
-    <slider x="1450" step="10" y="50" max="500" width="250" display="strategy-review-interval" height="50" min="10" direction="Horizontal" default="50.0" variable="strategy-review-interval" units="ticks"></slider>
-    <switch x="1450" y="120" height="40" on="true" variable="dynamic-hiring-strategy" width="250" display="dynamic-hiring-strategy"></switch>
-    <slider x="1450" step="0.01" y="170" max="1" width="250" display="vacancy-rate-cutoff" height="50" min="0" direction="Horizontal" default="0.05" variable="vacancy-rate-cutoff"></slider>
-    <slider x="1450" step="100" y="230" max="15000" width="250" display="hiring-threshold-ceiling" height="50" min="0" direction="Horizontal" default="13000.0" variable="hiring-threshold-ceiling" units="sp"></slider>
-    <slider x="1450" step="1" y="350" max="20" width="250" display="max-coaching-rate" height="50" min="0" direction="Horizontal" default="15.0" variable="max-coaching-rate"></slider>
-    <button x="30" y="410" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">profile</button>
-    <note x="1450" y="15" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Company Strategy</note>
-    <note x="1450" y="480" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Developer Behavior</note>
-    <slider x="1450" step="1" y="525" max="100" width="250" display="leaving-threshold" height="50" min="0" direction="Horizontal" default="25.0" variable="leaving-threshold"></slider>
-    <slider x="1450" step="0.05" y="645" max="5" width="250" display="coaching-turnover-decrease" height="50" min="0" direction="Horizontal" default="1.0" variable="coaching-turnover-decrease"></slider>
-    <slider x="1450" step="0.05" y="585" max="0.5" width="250" display="working-turnover-increase" height="50" min="0" direction="Horizontal" default="0.15" variable="working-turnover-increase"></slider>
-    <switch x="1450" y="300" height="40" on="false" variable="vacancy-rate-pressure" width="250" display="vacancy-rate-pressure"></switch>
-    <note x="1185" y="370" backgroundDark="0" fontSize="12" width="250" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Coaching and Skill</note>
-    <switch x="1185" y="405" height="40" on="true" variable="diminishing-returns-coaching" width="250" display="diminishing-returns-coaching"></switch>
-    <slider x="1185" step="100" y="455" max="20000" width="250" display="coaching-skill-ceiling" height="50" min="2000" direction="Horizontal" default="10000.0" variable="coaching-skill-ceiling" units="sp"></slider>
-    <slider x="1185" step="1" y="515" max="100" width="250" display="coaching-skill-increase" height="50" min="0" direction="Horizontal" default="20.0" variable="coaching-skill-increase" units="sp"></slider>
-    <slider x="1185" step="1" y="575" max="10" width="250" display="working-skill-increase" height="50" min="0" direction="Horizontal" default="1.0" variable="working-skill-increase" units="sp"></slider>
-    <switch x="1185" y="645" height="40" on="true" variable="skill-decay" width="250" display="skill-decay"></switch>
-    <slider x="1185" step="0.005" y="755" max="0.2" width="250" display="skill-decay-rate" height="50" min="0" direction="Horizontal" default="0.1" variable="skill-decay-rate"></slider>
-    <slider x="1185" step="10" y="695" max="800" width="250" display="skill-decay-threshold" height="50" min="100" direction="Horizontal" default="300.0" variable="skill-decay-threshold" units="ticks"></slider>
+    <note x="235" y="525" backgroundDark="0" fontSize="12" width="510" markdown="false" height="35" textColorDark="-1" textColorLight="-16777216" backgroundLight="0">Patch color proportional to vacancies: white is no vacancies, black is only vacancies</note>
   </widgets>
   <info>Please refer to the repository README https://github.com/ielpo/computer-simulation for the model description.</info>
   <turtleShapes>
@@ -1476,12 +1476,6 @@ set-histogram-num-bars 30</update>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════
-         Section 1: Basic analysis on coaching rate and output
-         ═══════════════════════════════════════════════════════════════════ -->
-
-    <!-- Exp 1-1: How skill gains from coaching vs working affect output -->
     <experiment name="coaching-output-exp1" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1538,9 +1532,6 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="diminishing-returns-coaching">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
         <enumeratedValueSet variable="working-turnover-increase">
           <value value="0.15"></value>
         </enumeratedValueSet>
@@ -1552,8 +1543,6 @@ set-histogram-num-bars 30</update>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- Exp 1-2: How turnover dynamics and leaving threshold affect output -->
     <experiment name="coaching-output-exp2" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1616,16 +1605,11 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="diminishing-returns-coaching">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
         <enumeratedValueSet variable="strategy-review-interval">
           <value value="50"></value>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- Exp 1-3: Skill decay sensitivity -->
     <experiment name="coaching-output-exp3" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1684,9 +1668,6 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="diminishing-returns-coaching">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
         <enumeratedValueSet variable="working-turnover-increase">
           <value value="0.15"></value>
         </enumeratedValueSet>
@@ -1698,12 +1679,6 @@ set-histogram-num-bars 30</update>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- ═══════════════════════════════════════════════════════════════════
-         Section 2: Strategy and strategy reviews
-         ═══════════════════════════════════════════════════════════════════ -->
-
-    <!-- Exp 2-1: How strategy review frequency interacts with turnover dynamics -->
     <experiment name="strategy-exp1" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1767,13 +1742,8 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="diminishing-returns-coaching">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- Exp 2-2: How structural variance and vacancy pressure interact with review -->
     <experiment name="strategy-exp2" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1831,9 +1801,6 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="diminishing-returns-coaching">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
         <enumeratedValueSet variable="working-turnover-increase">
           <value value="0.15"></value>
         </enumeratedValueSet>
@@ -1842,8 +1809,6 @@ set-histogram-num-bars 30</update>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
-    <!-- Exp 2-3: How coaching ceiling and diminishing returns interact with review -->
     <experiment name="strategy-exp3" repetitions="1" sequentialRunOrder="false" runMetricsEveryStep="true" timeLimit="8000">
       <setup>setup</setup>
       <go>go</go>
@@ -1906,9 +1871,6 @@ set-histogram-num-bars 30</update>
         <enumeratedValueSet variable="dynamic-hiring-strategy">
           <value value="true"></value>
         </enumeratedValueSet>
-        <enumeratedValueSet variable="dynamic-coaching-strategy">
-          <value value="false"></value>
-        </enumeratedValueSet>
         <enumeratedValueSet variable="working-turnover-increase">
           <value value="0.15"></value>
         </enumeratedValueSet>
@@ -1917,6 +1879,5 @@ set-histogram-num-bars 30</update>
         </enumeratedValueSet>
       </constants>
     </experiment>
-
   </experiments>
 </model>

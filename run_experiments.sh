@@ -37,8 +37,8 @@ done
 echo "java: $("$NETLOGO_INSTALL_DIR/lib/runtime/bin/java" -version 2>&1 | head -1)"
 
 # ── Preflight checks ──────────────────────────────────────────────────────────
-if [[ ! -f "$NETLOGO_INSTALL_DIR/netlogo-headless.sh" ]]; then
-  echo "ERROR: netlogo-headless.sh not found. Run: bash runpod_setup.sh"
+if [[ ! -f "$NETLOGO_INSTALL_DIR/NetLogo_Console" ]]; then
+  echo "ERROR: NetLogo_Console not found. Run: bash runpod_setup.sh"
   exit 1
 fi
 if [[ ! -f "$MODEL" ]]; then
@@ -78,13 +78,14 @@ for i in "${!EXPERIMENTS[@]}"; do
   LOG="$RESULTS_DIR/${EXP}.log"
   START=$SECONDS
 
-  if python3 run_behaviorspace.py \
-      --netlogo-home "$NETLOGO_INSTALL_DIR" \
-      --model        "$MODEL" \
-      --experiment   "$EXP" \
-      --spreadsheet  "$SPREADSHEET" \
-      --table        "$TABLE" \
-      --threads      "$THREADS" \
+    # Run BehaviorSpace using the NetLogo_Console headless launcher.
+    # Use an absolute path for the model so the launcher can find it.
+    MODEL_PATH="$(pwd)/$MODEL"
+    if "$NETLOGO_INSTALL_DIR/NetLogo_Console" --headless \
+      --model       "$MODEL_PATH" \
+      --experiment  "$EXP" \
+      --spreadsheet "$SPREADSHEET" \
+      --threads     "$THREADS" \
       > "$LOG" 2>&1; then
     ELAPSED=$((SECONDS - START))
     SIZE=$(du -sh "$SPREADSHEET" 2>/dev/null | cut -f1)

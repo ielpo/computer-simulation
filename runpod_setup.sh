@@ -65,18 +65,11 @@ ln -sf "$JAVA17" "$NETLOGO_INSTALL_DIR/lib/runtime/bin/java"
 echo "Linked Java 17 → $NETLOGO_INSTALL_DIR/lib/runtime/bin/java"
 "$NETLOGO_INSTALL_DIR/lib/runtime/bin/java" -version 2>&1 | head -1
 
-# ── Step 3: Python ────────────────────────────────────────────────────────────
-echo ""
-echo "=== Step 3/4: Installing Python dependencies ==="
-pip install --quiet uv
-uv sync
-
-# ── Step 4: Verify ────────────────────────────────────────────────────────────
+# ── Step 3: Verify ────────────────────────────────────────────────────────────
 echo ""
 echo "=== Step 4/4: Verifying setup ==="
-python3 run_behaviorspace.py \
-  --netlogo-home "$NETLOGO_INSTALL_DIR" \
-  --list-experiments
+"$NETLOGO_INSTALL_DIR/NetLogo_Console" --help > /dev/null
+echo "NetLogo executable verified at $NETLOGO_INSTALL_DIR/NetLogo_Console"
 
 echo ""
 echo "Setup complete. Run experiments with:"
